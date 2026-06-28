@@ -50,13 +50,6 @@ class LearnSessionViewModel extends ChangeNotifier {
         unitName: unitName,
       );
 
-      if (initialTermId != null && initialTermId!.isNotEmpty) {
-        final idx = terms.indexWhere((t) => t.id == initialTermId);
-        if (idx != -1) {
-          currentIndex = idx;
-        }
-      }
-
       if (_unitId.isEmpty) {
         final units = await _vocabularyService.getUnits(levelCode);
         final idx = units.indexWhere((u) => u.name == unitName);
@@ -68,6 +61,24 @@ class LearnSessionViewModel extends ChangeNotifier {
       if (_unitId.isNotEmpty) {
         final states = await _wordStateService.getByUnit(_unitId);
         _wordStates = {for (final s in states) s.termId: s};
+      }
+
+      if (initialTermId != null && initialTermId!.isNotEmpty) {
+        final idx = terms.indexWhere((t) => t.id == initialTermId);
+        if (idx != -1) {
+          currentIndex = idx;
+        }
+      } else {
+        // Find the first term that is not 'know' (not learned yet)
+        final firstNotKnownIdx = terms.indexWhere((t) {
+          final state = getWordState(t.id);
+          return state.status != WordStatus.know;
+        });
+        if (firstNotKnownIdx != -1) {
+          currentIndex = firstNotKnownIdx;
+        } else {
+          currentIndex = 0;
+        }
       }
     } catch (error) {
       errorMessage = error.toString();
