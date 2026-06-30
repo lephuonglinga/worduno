@@ -1,3 +1,5 @@
+import '../models/dashboard_data.dart';
+
 abstract class IDashboardService {
-  // TODO(team): aggregate progress, exam stats, recent activity.
+  Future<DashboardData> getDashboardData();
 }
