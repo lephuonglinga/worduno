@@ -21,4 +21,10 @@ abstract class IWordStateRepository {
     required String termId,
     required WordStatus status,
   });
+
+  Future<void> saveExplanation({
+    required String unitId,
+    required String termId,
+    required String explanationJson,
+  });
 }

@@ -6,6 +6,7 @@ class UserWordState {
     required this.termId,
     required this.isStarred,
     required this.status,
+    this.explanation,
   });
 
   final String unitId;
@@ -13,15 +14,21 @@ class UserWordState {
   final bool isStarred;
   final WordStatus status;
 
+  /// Cached JSON response from `/api/coach/explain`.
+  final String? explanation;
+
   UserWordState copyWith({
     bool? isStarred,
     WordStatus? status,
+    String? explanation,
+    bool clearExplanation = false,
   }) {
     return UserWordState(
       unitId: unitId,
       termId: termId,
       isStarred: isStarred ?? this.isStarred,
       status: status ?? this.status,
+      explanation: clearExplanation ? null : explanation ?? this.explanation,
     );
   }
 }

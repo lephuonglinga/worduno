@@ -127,6 +127,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
       HomeRoutePaths.coachConfig => CoachConfigPage(
           levelCode: entry.params['level'],
           unitName: entry.params['unit'],
+          unitId: entry.params['unitId'],
         ),
       HomeRoutePaths.coachSession => const CoachSessionPage(),
       _ => const Scaffold(

@@ -100,6 +100,43 @@ class WordStateStore extends ChangeNotifier {
     }
   }
 
+  Future<void> saveExplanation({
+    required String unitId,
+    required String termId,
+    required String explanationJson,
+  }) async {
+    final previous = stateFor(unitId: unitId, termId: termId);
+    _put(previous.copyWith(explanation: explanationJson));
+    notifyListeners();
+
+    try {
+      await _repository.saveExplanation(
+        unitId: unitId,
+        termId: termId,
+        explanationJson: explanationJson,
+      );
+    } catch (_) {
+      _put(previous);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Ensures a row exists in SQLite so foreign keys (e.g. coach_history) succeed.
+  Future<void> ensurePersisted({
+    required String unitId,
+    required String termId,
+  }) async {
+    await ensureLoaded(unitId);
+    final existing = await _repository.getByTerm(
+      unitId: unitId,
+      termId: termId,
+    );
+    if (existing == null) {
+      await _repository.save(stateFor(unitId: unitId, termId: termId));
+    }
+  }
+
   void _put(UserWordState state) {
     final unit = _byUnit.putIfAbsent(state.unitId, () => <String, UserWordState>{});
     unit[state.termId] = state;

@@ -73,6 +73,19 @@ class AppNavigationNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  void startCoachFromHistory() {
+    _configuration = _configuration.copyWith(
+      tab: AppTab.home,
+      homeStack: const [
+        HomeStackEntry(HomeRoutePaths.levelList, {}),
+        HomeStackEntry(HomeRoutePaths.coachConfig, {}),
+      ],
+      clearExamDetail: true,
+      clearCoachDetail: true,
+    );
+    notifyListeners();
+  }
+
   bool popCoachDetail() {
     if (_configuration.coachDetailId == null) {
       return false;

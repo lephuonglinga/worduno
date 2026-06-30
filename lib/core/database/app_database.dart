@@ -36,52 +36,67 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE user_word_states (
-            unit_id TEXT NOT NULL,
-            term_id TEXT NOT NULL,
-            is_starred INTEGER NOT NULL DEFAULT 0,
-            status TEXT NOT NULL DEFAULT 'new',
-            PRIMARY KEY (unit_id, term_id)
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE exam_history (
-            id TEXT PRIMARY KEY,
-            date TEXT NOT NULL,
-            unit_id TEXT NOT NULL,
-            score REAL NOT NULL
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE question_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            exam_id TEXT NOT NULL,
-            type TEXT NOT NULL,
-            question TEXT NOT NULL,
-            user_answer TEXT NOT NULL,
-            correct_answer TEXT NOT NULL,
-            FOREIGN KEY (exam_id) REFERENCES exam_history (id)
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE coach_history (
-            id TEXT PRIMARY KEY,
-            date TEXT NOT NULL,
-            word TEXT NOT NULL,
-            user_sentence TEXT NOT NULL,
-            grammar_feedback TEXT NOT NULL,
-            vocabulary_feedback TEXT NOT NULL,
-            naturalness_feedback TEXT NOT NULL,
-            suggestion_feedback TEXT NOT NULL
-          )
-        ''');
+        await _createV2Schema(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE user_word_states ADD COLUMN explanation TEXT',
+          );
+          await db.execute('DROP TABLE IF EXISTS coach_history');
+          await db.execute(_coachHistoryTableSql);
+        }
       },
     );
+  }
+
+  static const _coachHistoryTableSql = '''
+    CREATE TABLE coach_history (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      unit_id TEXT NOT NULL,
+      term_id TEXT NOT NULL,
+      user_sentence TEXT NOT NULL,
+      response_json TEXT NOT NULL,
+      FOREIGN KEY (unit_id, term_id) REFERENCES user_word_states (unit_id, term_id)
+    )
+  ''';
+
+  Future<void> _createV2Schema(Database db) async {
+    await db.execute('''
+      CREATE TABLE user_word_states (
+        unit_id TEXT NOT NULL,
+        term_id TEXT NOT NULL,
+        is_starred INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'new',
+        explanation TEXT,
+        PRIMARY KEY (unit_id, term_id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE exam_history (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        score REAL NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE question_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        exam_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        question TEXT NOT NULL,
+        user_answer TEXT NOT NULL,
+        correct_answer TEXT NOT NULL,
+        FOREIGN KEY (exam_id) REFERENCES exam_history (id)
+      )
+    ''');
+
+    await db.execute(_coachHistoryTableSql);
   }
 }

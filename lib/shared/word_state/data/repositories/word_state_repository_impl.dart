@@ -28,13 +28,7 @@ class WordStateRepositoryImpl implements IWordStateRepository {
     required String termId,
   }) async {
     final current = await getByTerm(unitId: unitId, termId: termId);
-    final next = (current ??
-            UserWordState(
-              unitId: unitId,
-              termId: termId,
-              isStarred: false,
-              status: WordStatus.newWord,
-            ))
+    final next = (current ?? _defaultState(unitId: unitId, termId: termId))
         .copyWith(isStarred: !(current?.isStarred ?? false));
 
     await save(next);
@@ -47,15 +41,34 @@ class WordStateRepositoryImpl implements IWordStateRepository {
     required WordStatus status,
   }) async {
     final current = await getByTerm(unitId: unitId, termId: termId);
-    final next = (current ??
-            UserWordState(
-              unitId: unitId,
-              termId: termId,
-              isStarred: false,
-              status: WordStatus.newWord,
-            ))
+    final next = (current ?? _defaultState(unitId: unitId, termId: termId))
         .copyWith(status: status);
 
     await save(next);
+  }
+
+  @override
+  Future<void> saveExplanation({
+    required String unitId,
+    required String termId,
+    required String explanationJson,
+  }) async {
+    final current = await getByTerm(unitId: unitId, termId: termId);
+    final next = (current ?? _defaultState(unitId: unitId, termId: termId))
+        .copyWith(explanation: explanationJson);
+
+    await save(next);
+  }
+
+  UserWordState _defaultState({
+    required String unitId,
+    required String termId,
+  }) {
+    return UserWordState(
+      unitId: unitId,
+      termId: termId,
+      isStarred: false,
+      status: WordStatus.newWord,
+    );
   }
 }

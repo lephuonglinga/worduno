@@ -1,13 +1,9 @@
 import '../../domain/entities/coach_entities.dart';
 
-abstract class ICoachService {
-  CoachSession? get currentSession;
-
+abstract class ICoachRepository {
   Future<int> countAvailableWords(CoachSessionConfig config);
 
-  Future<void> startSession(CoachSessionConfig config);
-
-  void clearSession();
+  Future<CoachSession> buildSession(CoachSessionConfig config);
 
   Future<CoachExplainResult> getExplanation(CoachWord word);
 
