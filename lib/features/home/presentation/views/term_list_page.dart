@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +6,7 @@ import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../app/routes/route_paths.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
+import '../../../../core/utils/sort_utils.dart';
 import '../../../../core/utils/tts_helper.dart';
 import '../../../../shared/vocabulary/domain/entities/term.dart';
 import '../../../../shared/word_state/domain/entities/user_word_state.dart';
@@ -84,8 +86,9 @@ class _TermListView extends StatefulWidget {
 class _TermListViewState extends State<_TermListView> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  _ViewMode _viewMode = _ViewMode.flashcard;
+  _ViewMode _viewMode = _ViewMode.list;
   _FilterMode _filter = _FilterMode.all;
+  SortOrder _sort = SortOrder.original;
 
   @override
   void initState() {
@@ -108,15 +111,28 @@ class _TermListViewState extends State<_TermListView> {
             t.definition.toLowerCase().contains(_searchQuery))
         .toList();
 
-    if (_filter == _FilterMode.all) return searched;
-    return searched.where((t) {
-      final state = vm.getWordState(t.id);
-      if (_filter == _FilterMode.starred) return state.isStarred;
-      if (_filter == _FilterMode.learned) return state.status == WordStatus.know;
-      if (_filter == _FilterMode.learning) return state.status == WordStatus.learning;
-      if (_filter == _FilterMode.newWord) return state.status == WordStatus.newWord;
-      return true;
-    }).toList();
+    final filtered = _filter == _FilterMode.all
+        ? searched
+        : searched.where((t) {
+            final state = vm.getWordState(t.id);
+            if (_filter == _FilterMode.starred) return state.isStarred;
+            if (_filter == _FilterMode.learned) {
+              return state.status == WordStatus.know;
+            }
+            if (_filter == _FilterMode.learning) {
+              return state.status == WordStatus.learning;
+            }
+            if (_filter == _FilterMode.newWord) {
+              return state.status == WordStatus.newWord;
+            }
+            return true;
+          }).toList();
+
+    return SortUtils.sortByName(
+      items: filtered,
+      nameSelector: (term) => term.text,
+      order: _sort,
+    );
   }
 
   @override
@@ -183,7 +199,7 @@ class _TermListViewState extends State<_TermListView> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${vm.knownCount} of ${vm.terms.length} words',
+                        '${displayTerms.length} of ${vm.terms.length} words',
                         style: const TextStyle(
                             fontSize: 13, color: Color(0xFF9CA3AF)),
                       ),
@@ -276,6 +292,40 @@ class _TermListViewState extends State<_TermListView> {
                 ),
               ),
 
+              // ── Sort chips (spec §11) ───────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterChip2(
+                          label: 'Original order',
+                          selected: _sort == SortOrder.original,
+                          onTap: () =>
+                              setState(() => _sort = SortOrder.original),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip2(
+                          label: 'A–Z',
+                          selected: _sort == SortOrder.aToZ,
+                          onTap: () =>
+                              setState(() => _sort = SortOrder.aToZ),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip2(
+                          label: 'Z–A',
+                          selected: _sort == SortOrder.zToA,
+                          onTap: () =>
+                              setState(() => _sort = SortOrder.zToA),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               // ── Filter chips ─────────────────
               SliverToBoxAdapter(
                 child: Padding(
@@ -347,8 +397,10 @@ class _TermListViewState extends State<_TermListView> {
                                   term: term,
                                   state: vm.getWordState(term.id),
                                   onStarTapped: () => vm.toggleStar(term.id),
-                                  onStatusChanged: (status) =>
-                                      vm.updateStatus(term.id, status),
+                                  onKnowTapped: () =>
+                                      vm.updateStatus(term.id, WordStatus.know),
+                                  onLearningTapped: () => vm.updateStatus(
+                                      term.id, WordStatus.learning),
                                 ),
                               );
                             },
@@ -376,8 +428,10 @@ class _TermListViewState extends State<_TermListView> {
                                 term: term,
                                 state: vm.getWordState(term.id),
                                 onStarTapped: () => vm.toggleStar(term.id),
-                                onStatusChanged: (status) =>
-                                    vm.updateStatus(term.id, status),
+                                onKnowTapped: () =>
+                                    vm.updateStatus(term.id, WordStatus.know),
+                                onLearningTapped: () => vm.updateStatus(
+                                    term.id, WordStatus.learning),
                               );
                             },
                             childCount: displayTerms.length,
@@ -643,13 +697,15 @@ class _TermCard extends StatelessWidget {
     required this.term,
     required this.state,
     required this.onStarTapped,
-    required this.onStatusChanged,
+    required this.onKnowTapped,
+    required this.onLearningTapped,
   });
 
   final Term term;
   final UserWordState state;
   final VoidCallback onStarTapped;
-  final ValueChanged<WordStatus> onStatusChanged;
+  final VoidCallback onKnowTapped;
+  final VoidCallback onLearningTapped;
 
   Color get _statusColor {
     return switch (state.status) {
@@ -696,50 +752,36 @@ class _TermCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    final vm = context.read<TermListViewModel>();
-                    context.read<AppNavigationNotifier>().openHomeRoute(
-                          HomeRoutePaths.learn,
-                          params: {
-                            'level': vm.levelCode,
-                            'unit': vm.unitName,
-                            'unitId': vm.unitId,
-                            'termId': term.id,
-                          },
-                        );
-                  },
-                  child: Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        term.text,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111827),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      term.text,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: sc.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        sl,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: sc,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: sc.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          sl,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: sc,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
@@ -771,37 +813,20 @@ class _TermCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // ── Definition ─────────────────────────────────────────
-          GestureDetector(
-            onTap: () {
-              final vm = context.read<TermListViewModel>();
-              context.read<AppNavigationNotifier>().openHomeRoute(
-                    HomeRoutePaths.learn,
-                    params: {
-                      'level': vm.levelCode,
-                      'unit': vm.unitName,
-                      'unitId': vm.unitId,
-                      'termId': term.id,
-                    },
-                  );
-            },
-            child: Text(
-              term.definition,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-                height: 1.45,
-              ),
+          Text(
+            term.definition,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B7280),
+              height: 1.45,
             ),
           ),
           const SizedBox(height: 13),
-          // ── Know / Learning buttons ─────────────────────────────
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => onStatusChanged(
-                      _isLearned ? WordStatus.newWord : WordStatus.know),
+                  onTap: onKnowTapped,
                   child: _TermBtn(
                     icon: Icons.check_rounded,
                     label: 'Know',
@@ -813,8 +838,7 @@ class _TermCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => onStatusChanged(
-                      _isLearning ? WordStatus.newWord : WordStatus.learning),
+                  onTap: onLearningTapped,
                   child: _TermBtn(
                     icon: Icons.refresh_rounded,
                     label: 'Learning',
@@ -883,19 +907,23 @@ class _FlashcardListItem extends StatefulWidget {
     required this.term,
     required this.state,
     required this.onStarTapped,
-    required this.onStatusChanged,
+    required this.onKnowTapped,
+    required this.onLearningTapped,
   });
 
   final Term term;
   final UserWordState state;
   final VoidCallback onStarTapped;
-  final ValueChanged<WordStatus> onStatusChanged;
+  final VoidCallback onKnowTapped;
+  final VoidCallback onLearningTapped;
 
   @override
   State<_FlashcardListItem> createState() => _FlashcardListItemState();
 }
 
 class _FlashcardListItemState extends State<_FlashcardListItem> {
+  bool _isFlipped = false;
+
   Color get _statusColor {
     return switch (widget.state.status) {
       WordStatus.know => const Color(0xFF10B981),
@@ -915,123 +943,52 @@ class _FlashcardListItemState extends State<_FlashcardListItem> {
   bool get _isLearned => widget.state.status == WordStatus.know;
   bool get _isLearning => widget.state.status == WordStatus.learning;
 
+  void _toggleFlip() => setState(() => _isFlipped = !_isFlipped);
+
   @override
   Widget build(BuildContext context) {
     final sc = _statusColor;
     final sl = _statusLabel;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── The Card ───────────────────────────────────────
           GestureDetector(
-            onTap: () {
-              final vm = context.read<TermListViewModel>();
-              context.read<AppNavigationNotifier>().openHomeRoute(
-                    HomeRoutePaths.learn,
-                    params: {
-                      'level': vm.levelCode,
-                      'unit': vm.unitName,
-                      'unitId': vm.unitId,
-                      'termId': widget.term.id,
-                    },
-                  );
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            onTap: _toggleFlip,
+            child: SizedBox(
+              height: 168,
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.transparent,
-                  width: 1.5,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                  begin: 0,
+                  end: _isFlipped ? math.pi : 0,
                 ),
-              ),
-              child: Column(
-                children: [
-                  // Card Header: Status badge on left, Star icon on right
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: sc.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          sl,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: sc,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: widget.onStarTapped,
-                        child: Icon(
-                          widget.state.isStarred
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          size: 22,
-                          color: widget.state.isStarred
-                              ? const Color(0xFFF59E0B)
-                              : Colors.grey[400],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Word / Definition Text
-                  const Text(
-                    'Word',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF9CA3AF),
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.term.text,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Tap card to learn',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFBCC0CC),
-                    ),
-                  ),
-                ],
+                duration: const Duration(milliseconds: 520),
+                curve: Curves.easeInOut,
+                builder: (context, angle, child) {
+                  final showBack = angle >= math.pi / 2;
+                  return Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001)
+                      ..rotateY(angle),
+                    child: showBack
+                        ? Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.identity()..rotateY(math.pi),
+                            child: _buildCardBack(),
+                          )
+                        : _buildCardFront(sc, sl),
+                  );
+                },
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          // ── The button bar below the card ───────────────────
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
@@ -1045,7 +1002,6 @@ class _FlashcardListItemState extends State<_FlashcardListItem> {
             ),
             child: Row(
               children: [
-                // Audio pronunciation circular button
                 GestureDetector(
                   onTap: () => TtsHelper.speak(widget.term.text),
                   child: Container(
@@ -1063,11 +1019,9 @@ class _FlashcardListItemState extends State<_FlashcardListItem> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Know button
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => widget.onStatusChanged(
-                        _isLearned ? WordStatus.newWord : WordStatus.know),
+                    onTap: widget.onKnowTapped,
                     child: _TermBtn(
                       icon: Icons.check_rounded,
                       label: 'Know',
@@ -1077,11 +1031,9 @@ class _FlashcardListItemState extends State<_FlashcardListItem> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Learning button
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => widget.onStatusChanged(
-                        _isLearning ? WordStatus.newWord : WordStatus.learning),
+                    onTap: widget.onLearningTapped,
                     child: _TermBtn(
                       icon: Icons.refresh_rounded,
                       label: 'Learning',
@@ -1091,6 +1043,163 @@ class _FlashcardListItemState extends State<_FlashcardListItem> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardFront(Color statusColor, String statusLabel) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: widget.onStarTapped,
+              child: Icon(
+                widget.state.isStarred
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
+                size: 22,
+                color: widget.state.isStarred
+                    ? const Color(0xFFF59E0B)
+                    : Colors.grey[400],
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.term.text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tap card to flip',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFBCC0CC),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardBack() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x663B82F6),
+            Color(0x558B5CF6),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: widget.onStarTapped,
+              child: Icon(
+                widget.state.isStarred
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
+                size: 22,
+                color: widget.state.isStarred
+                    ? const Color(0xFFF59E0B)
+                    : Colors.grey[400],
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 26),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'DEFINITION',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6B7280),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.term.definition,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF111827),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

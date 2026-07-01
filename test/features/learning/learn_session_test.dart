@@ -95,5 +95,16 @@ void main() {
 
       expect(session.currentTerm?.id, 't2');
     });
+
+    test('session progress label tracks in-session position', () {
+      final session = LearnSession.fromTerms(
+        terms: _terms(2),
+        initialStatuses: const {},
+      );
+
+      expect(session.sessionProgressLabel, '1/2');
+      session.markKnow();
+      expect(session.sessionProgressLabel, '2/2');
+    });
   });
 }
