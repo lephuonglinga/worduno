@@ -67,8 +67,29 @@ class _LearnSessionPageState extends State<LearnSessionPage> {
 // View
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _LearnSessionView extends StatelessWidget {
+class _LearnSessionView extends StatefulWidget {
   const _LearnSessionView();
+
+  @override
+  State<_LearnSessionView> createState() => _LearnSessionViewState();
+}
+
+class _LearnSessionViewState extends State<_LearnSessionView> {
+  String? _markAnim;
+
+  Future<void> _markWithAnim(
+    LearnSessionViewModel vm,
+    Future<void> Function() action,
+    String direction,
+  ) async {
+    if (_markAnim != null) return;
+    setState(() => _markAnim = direction);
+    await Future<void>.delayed(const Duration(milliseconds: 380));
+    if (!mounted) return;
+    await action();
+    if (!mounted) return;
+    setState(() => _markAnim = null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,10 +113,6 @@ class _LearnSessionView extends StatelessWidget {
       ),
     );
   }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Completion screen
-  // ─────────────────────────────────────────────────────────────────────────────
 
   Widget _buildCompletionScreen(BuildContext context, LearnSessionViewModel vm) {
     return Center(
@@ -373,25 +390,45 @@ class _LearnSessionView extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: GestureDetector(
-              onTap: vm.flipCard,
+              onTap: _markAnim == null ? vm.flipCard : null,
+              onHorizontalDragEnd: (details) {
+                if (_markAnim != null) return;
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity < -200) {
+                  _markWithAnim(vm, vm.markKnow, 'know');
+                } else if (velocity > 200) {
+                  _markWithAnim(vm, vm.markLearning, 'learning');
+                }
+              },
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(begin: 0, end: vm.isFlipped ? math.pi : 0),
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.easeInOut,
                 builder: (context, val, child) {
                   final isBack = val >= math.pi / 2;
-                  return Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001) // perspective
-                      ..rotateY(val),
-                    child: isBack
-                        ? Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.identity()..rotateY(math.pi), // rotate the back side content so it reads correctly
-                            child: _buildCardBack(currentTerm, isStarred, vm),
-                          )
-                        : _buildCardFront(currentTerm, isStarred, vm),
+                  final slideX = _markAnim == 'know'
+                      ? 55.0
+                      : _markAnim == 'learning'
+                          ? -55.0
+                          : 0.0;
+                  final opacity = _markAnim == null ? 1.0 : 0.15;
+
+                  return Opacity(
+                    opacity: opacity,
+                    child: Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(val)
+                        ..translate(slideX, 0.0),
+                      child: isBack
+                          ? Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()..rotateY(math.pi),
+                              child: _buildCardBack(currentTerm, isStarred, vm),
+                            )
+                          : _buildCardFront(currentTerm, isStarred, vm),
+                    ),
                   );
                 },
               ),
@@ -434,7 +471,7 @@ class _LearnSessionView extends StatelessWidget {
               // Still learning button
               Expanded(
                 child: _ScaleButton(
-                  onTap: vm.markLearning,
+                  onTap: () => _markWithAnim(vm, vm.markLearning, 'learning'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
@@ -467,7 +504,7 @@ class _LearnSessionView extends StatelessWidget {
               // I know this button
               Expanded(
                 child: _ScaleButton(
-                  onTap: vm.markKnow,
+                  onTap: () => _markWithAnim(vm, vm.markKnow, 'know'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
@@ -595,12 +632,15 @@ class _LearnSessionView extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFBAE6FD),
-          width: 1.5,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x663B82F6),
+            Color(0x558B5CF6),
+          ],
         ),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),

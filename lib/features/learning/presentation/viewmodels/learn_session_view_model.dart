@@ -63,10 +63,10 @@ class LearnSessionViewModel extends ChangeNotifier {
   bool get isCompleted => _session?.isCompleted ?? false;
   Term? get currentTerm => _session?.currentTerm;
   bool get canUndo => _session?.canUndo ?? false;
-  double get progress => _session?.progress ?? 0;
+  double get progress => _session?.sessionProgress ?? 0;
   int get knownCount => _session?.knownCount ?? 0;
   int get totalCards => _session?.totalCards ?? 0;
-  String get progressLabel => '$knownCount/$totalCards';
+  String get progressLabel => _session?.sessionProgressLabel ?? '0/0';
 
   bool get currentStarred {
     final term = currentTerm;

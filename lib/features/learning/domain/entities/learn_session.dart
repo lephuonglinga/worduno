@@ -12,8 +12,6 @@ typedef LearnStatusRestore = ({String termId, WordStatus status});
 /// The session owns the queue ordering and undo logic. It does not touch any
 /// repository or database; persistence is the caller's responsibility.
 class LearnSession {
-  LearnSession._(this._round, this._next, this._statuses, this.totalCards);
-
   /// Builds a session from [terms]. Terms already [WordStatus.know] are
   /// considered done and excluded from the working queue. When [startTermId]
   /// is provided the queue is rotated so that term is shown first.
@@ -43,13 +41,22 @@ class LearnSession {
       }
     }
 
-    return LearnSession._(round, <Term>[], statuses, terms.length);
+    return LearnSession._(round, <Term>[], statuses, terms.length, 0);
   }
 
   List<Term> _round;
   List<Term> _next;
   final Map<String, WordStatus> _statuses;
   final int totalCards;
+  int _advanceCount;
+
+  LearnSession._(
+    this._round,
+    this._next,
+    this._statuses,
+    this.totalCards,
+    this._advanceCount,
+  );
 
   final List<_SessionSnapshot> _undoStack = [];
 
@@ -66,6 +73,22 @@ class LearnSession {
 
   /// Progress as the fraction of known terms (BR-07).
   double get progress => totalCards == 0 ? 0 : knownCount / totalCards;
+
+  /// Cards remaining in the active session queue (current round + requeued).
+  int get activeQueueLength => _round.length + _next.length;
+
+  /// In-session position progress (preview-style idx / deck length).
+  double get sessionProgress {
+    final total = _advanceCount + activeQueueLength;
+    if (total == 0) return 1;
+    return _advanceCount / total;
+  }
+
+  String get sessionProgressLabel {
+    final total = _advanceCount + activeQueueLength;
+    if (total == 0) return '$totalCards/$totalCards';
+    return '${_advanceCount + 1}/$total';
+  }
 
   WordStatus statusOf(String termId) =>
       _statuses[termId] ?? WordStatus.newWord;
@@ -93,6 +116,7 @@ class LearnSession {
       _next = <Term>[];
     }
 
+    _advanceCount++;
     return term;
   }
 
@@ -104,6 +128,7 @@ class LearnSession {
     _round = snapshot.round;
     _next = snapshot.next;
     _statuses[snapshot.termId] = snapshot.previousStatus;
+    _advanceCount = snapshot.advanceCount;
 
     return (termId: snapshot.termId, status: snapshot.previousStatus);
   }
@@ -122,6 +147,7 @@ class LearnSession {
         next: List.of(_next),
         termId: term.id,
         previousStatus: statusOf(term.id),
+        advanceCount: _advanceCount,
       ),
     );
   }
@@ -133,10 +159,12 @@ class _SessionSnapshot {
     required this.next,
     required this.termId,
     required this.previousStatus,
+    required this.advanceCount,
   });
 
   final List<Term> round;
   final List<Term> next;
   final String termId;
   final WordStatus previousStatus;
+  final int advanceCount;
 }
