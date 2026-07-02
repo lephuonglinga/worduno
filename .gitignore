@@ -41,3 +41,5 @@ app.*.map.json
 
 # Local SDK paths
 android/local.properties
+
+/docs/lexia-preview/
