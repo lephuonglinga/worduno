@@ -85,7 +85,7 @@ class _LevelListPageState extends State<LevelListPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _StreakCard(),
+                _StreakCard(viewModel: viewModel),
               ],
             ),
           ),
@@ -185,8 +185,16 @@ class _LevelListPageState extends State<LevelListPage> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StreakCard extends StatelessWidget {
+  const _StreakCard({required this.viewModel});
+
+  final LevelListViewModel viewModel;
+
   @override
   Widget build(BuildContext context) {
+    final streakLabel = viewModel.currentStreak == 1
+        ? '1 day'
+        : '${viewModel.currentStreak} days';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
@@ -219,9 +227,9 @@ class _StreakCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  '0 days',
-                  style: TextStyle(
+                Text(
+                  streakLabel,
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF111827),
@@ -232,14 +240,14 @@ class _StreakCard extends StatelessWidget {
           ),
           _MiniStat(
             icon: Icons.check,
-            value: '0',
+            value: '${viewModel.totalLearned}',
             label: 'Learned',
             color: const Color(0xFF3B82F6),
           ),
           const SizedBox(width: 20),
           _MiniStat(
             icon: Icons.star,
-            value: '0',
+            value: '${viewModel.totalStarred}',
             label: 'Starred',
             color: const Color(0xFFF59E0B),
           ),

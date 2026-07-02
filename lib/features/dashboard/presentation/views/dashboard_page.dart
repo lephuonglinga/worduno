@@ -813,29 +813,43 @@ class _StrengthWeaknessCol extends StatelessWidget {
                 final pct = (unit.progress * 100).round();
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Mini circle icon
-                      _UnitMiniBadge(unitId: unit.unitId),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Unit ${unit.unitId}',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF374151),
+                      Row(
+                        children: [
+                          _UnitMiniBadge(unitId: unit.unitId),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              unit.unitName,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF374151),
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          Text(
+                            '$pct%',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '$pct%',
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF111827),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: unit.progress,
+                          minHeight: 4,
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                         ),
                       ),
                     ],
@@ -957,7 +971,7 @@ class _RecentExamCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${exam.dateLabel} Â· ${exam.questionCount} questions',
+                  '${exam.dateLabel} · ${exam.questionCount} questions',
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF9CA3AF),
@@ -1002,29 +1016,16 @@ class _RecentCoachCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                coach.word,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+              Expanded(
+                child: Text(
+                  coach.word,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
-              // Stars
-              Row(
-                children: List.generate(5, (index) {
-                  final filled = index < coach.rating;
-                  return Icon(
-                    Icons.star_rounded,
-                    size: 13.5,
-                    color: filled
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFFE5E7EB),
-                  );
-                }),
-              ),
-              const Spacer(),
               Text(
                 coach.dateLabel,
                 style: const TextStyle(
@@ -1037,7 +1038,7 @@ class _RecentCoachCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'â€œ${coach.sentence}â€',
+            _formatQuotedSentence(coach.sentence),
             style: const TextStyle(
               fontSize: 12,
               fontStyle: FontStyle.italic,
@@ -1049,4 +1050,12 @@ class _RecentCoachCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatQuotedSentence(String sentence) {
+  final cleaned = sentence
+      .replaceAll(RegExp(r'^["\u201c\u201d]+|["\u201c\u201d]+$'), '')
+      .trim();
+
+  return '"$cleaned"';
 }

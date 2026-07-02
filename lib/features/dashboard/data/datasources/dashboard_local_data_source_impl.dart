@@ -30,7 +30,8 @@ class DashboardLocalDataSourceImpl implements IDashboardLocalDataSource {
       SELECT
         id,
         date,
-        term_id AS word,
+        term_id,
+        definition,
         user_sentence,
         response_json
       FROM coach_feedback
