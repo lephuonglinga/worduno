@@ -61,6 +61,9 @@ class WordStateStore extends ChangeNotifier {
   int knownCount(String unitId) =>
       statesOf(unitId).where((s) => s.status == WordStatus.know).length;
 
+  int starredCount(String unitId) =>
+      statesOf(unitId).where((s) => s.isStarred).length;
+
   Future<void> updateStatus({
     required String unitId,
     required String termId,

@@ -82,6 +82,8 @@ class DashboardRepositoryImpl implements IDashboardRepository {
     final examStats = await _loadExamStats(unitSummaries);
     final recentCoachFeedback = await _loadRecentCoachFeedback();
 
+    final strongestUnits = _strongestUnits(unitSummaries);
+
     return DashboardData(
       overallProgress: _progress(knownTerms, totalTerms),
       totalTerms: totalTerms,
@@ -92,8 +94,8 @@ class DashboardRepositoryImpl implements IDashboardRepository {
       examCount: examStats.examCount,
       averageExamScore: examStats.averageExamScore,
       levelProgressList: levelSummaries,
-      strongestUnits: _topUnits(unitSummaries, strongest: true),
-      weakestUnits: _topUnits(unitSummaries, strongest: false),
+      strongestUnits: strongestUnits,
+      weakestUnits: _weakestUnits(unitSummaries, strongestUnits),
       recentExams: examStats.recentExams,
       recentCoachFeedback: recentCoachFeedback,
     );
@@ -115,18 +117,31 @@ class DashboardRepositoryImpl implements IDashboardRepository {
     return (known / total).clamp(0, 1).toDouble();
   }
 
-  List<UnitProgressData> _topUnits(
-    List<UnitProgressData> units, {
-    required bool strongest,
-  }) {
-    final sorted = [...units]
-      ..sort(
-        (a, b) => strongest
-            ? b.progress.compareTo(a.progress)
-            : a.progress.compareTo(b.progress),
-      );
+  List<UnitProgressData> _strongestUnits(List<UnitProgressData> units) {
+    final sorted = units.where((unit) => unit.progress > 0).toList()
+      ..sort((a, b) => b.progress.compareTo(a.progress));
 
     return sorted.take(3).toList(growable: false);
+  }
+
+  List<UnitProgressData> _weakestUnits(
+    List<UnitProgressData> units,
+    List<UnitProgressData> strongest,
+  ) {
+    final strongestIds = strongest.map((unit) => unit.unitId).toSet();
+    final sorted = units
+        .where((unit) => !strongestIds.contains(unit.unitId))
+        .toList()
+      ..sort((a, b) => a.progress.compareTo(b.progress));
+
+    return sorted.take(3).toList(growable: false);
+  }
+
+  double _normalizeScore(double score) {
+    if (score <= 1) {
+      return score.clamp(0, 1).toDouble();
+    }
+    return (score / 100).clamp(0, 1).toDouble();
   }
 
   Future<_ExamStats> _loadExamStats(List<UnitProgressData> units) async {
@@ -142,7 +157,7 @@ class DashboardRepositoryImpl implements IDashboardRepository {
 
     final averageScore =
         rows
-            .map((row) => (row['score'] as num? ?? 0).toDouble())
+            .map((row) => _normalizeScore((row['score'] as num? ?? 0).toDouble()))
             .fold<double>(0, (sum, score) => sum + score) /
         rows.length;
     final unitNameById = {for (final unit in units) unit.unitId: unit.unitName};
@@ -156,7 +171,7 @@ class DashboardRepositoryImpl implements IDashboardRepository {
             dateLabel: _dateLabel(row['date'] as String?),
             unitId: unitId,
             unitName: unitNameById[unitId] ?? unitId,
-            score: (row['score'] as num? ?? 0).toDouble(),
+            score: _normalizeScore((row['score'] as num? ?? 0).toDouble()),
             questionCount: row['question_count'] as int? ?? 0,
           );
         })
@@ -177,12 +192,36 @@ class DashboardRepositoryImpl implements IDashboardRepository {
           return RecentCoachItem(
             id: row['id'] as String? ?? '',
             dateLabel: _dateLabel(row['date'] as String?),
-            word: row['word'] as String? ?? '',
-            sentence: row['user_sentence'] as String? ?? '',
+            word: _coachDisplayWord(row),
+            sentence: _cleanDisplayText(row['user_sentence'] as String? ?? ''),
             rating: _coachRating(row),
           );
         })
         .toList(growable: false);
+  }
+
+  String _cleanDisplayText(String value) {
+    return value
+        .replaceAll('â€œ', '"')
+        .replaceAll('â€', '"')
+        .replaceAll('â€˜', "'")
+        .replaceAll('â€™', "'")
+        .replaceAll('Â·', '·')
+        .trim();
+  }
+
+  String _coachDisplayWord(Map<String, Object?> row) {
+    final termId = _cleanDisplayText(row['term_id'] as String? ?? '');
+    if (termId.isNotEmpty) {
+      return termId;
+    }
+
+    final definition = _cleanDisplayText(row['definition'] as String? ?? '');
+    if (definition.isNotEmpty) {
+      return definition;
+    }
+
+    return 'Unknown term';
   }
 
   int _coachRating(Map<String, Object?> row) {
