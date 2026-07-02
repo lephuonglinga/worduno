@@ -1,118 +1,280 @@
+import '../../../../core/database/app_database.dart';
+import '../../../../shared/vocabulary/application/services/i_vocabulary_service.dart';
+import '../../../../shared/word_state/application/services/i_word_state_service.dart';
+import '../../../../shared/word_state/domain/entities/user_word_state.dart';
+import '../../../../shared/word_state/domain/entities/word_status.dart';
 import '../models/dashboard_data.dart';
 import 'i_dashboard_service.dart';
 
 class DashboardServiceImpl implements IDashboardService {
+  DashboardServiceImpl(
+    this._vocabularyService,
+    this._wordStateService,
+    this._database,
+  );
+
+  final IVocabularyService _vocabularyService;
+  final IWordStateService _wordStateService;
+  final AppDatabase _database;
+
   @override
   Future<DashboardData> getDashboardData() async {
-    // Return dummy data modeled exactly like the provided design screenshot
-    return const DashboardData(
-      overallProgress: 0.26, // 26%
-      totalTerms: 1040,
-      knownTerms: 268,
-      learnedWordsCount: 268,
-      learningWordsCount: 124,
-      starredWordsCount: 47,
-      examCount: 12,
-      averageExamScore: 0.82, // 82%
-      levelProgressList: [
+    final levels = await _vocabularyService.getLevels();
+    final levelSummaries = <LevelProgressData>[];
+    final unitSummaries = <UnitProgressData>[];
+
+    var totalTerms = 0;
+    var knownTerms = 0;
+    var learningWordsCount = 0;
+    var starredWordsCount = 0;
+
+    for (final level in levels) {
+      final units = await _vocabularyService.getUnits(level.code);
+
+      var levelTotalTerms = 0;
+      var levelKnownTerms = 0;
+
+      for (final unit in units) {
+        final terms = await _vocabularyService.getTerms(
+          levelCode: level.code,
+          unitName: unit.name,
+        );
+        final states = await _wordStateService.getByUnit(unit.id);
+
+        final unitTotalTerms = unit.totalTerms > 0
+            ? unit.totalTerms
+            : terms.length;
+        final unitKnownTerms = _countStatus(
+          states,
+          WordStatus.know,
+          knownFallback: unit.knownTerms,
+        );
+
+        levelTotalTerms += unitTotalTerms;
+        levelKnownTerms += unitKnownTerms;
+        learningWordsCount += _countStatus(states, WordStatus.learning);
+        starredWordsCount += states.where((state) => state.isStarred).length;
+
+        unitSummaries.add(
+          UnitProgressData(
+            unitId: unit.id,
+            unitName: unit.name,
+            progress: _progress(unitKnownTerms, unitTotalTerms),
+          ),
+        );
+      }
+
+      totalTerms += levelTotalTerms;
+      knownTerms += levelKnownTerms;
+      levelSummaries.add(
         LevelProgressData(
-          levelCode: 'B1',
-          levelName: 'Intermediate',
-          progress: 0.69,
-          knownTerms: 185,
-          totalTerms: 240,
+          levelCode: level.code,
+          levelName: _levelName(level.code),
+          progress: _progress(levelKnownTerms, levelTotalTerms),
+          knownTerms: levelKnownTerms,
+          totalTerms: levelTotalTerms,
         ),
-        LevelProgressData(
-          levelCode: 'B2',
-          levelName: 'Upper Intermediate',
-          progress: 0.38,
-          knownTerms: 85,
-          totalTerms: 220,
-        ),
-        LevelProgressData(
-          levelCode: 'C1 & C2',
-          levelName: 'Advanced',
-          progress: 0.05,
-          knownTerms: 23,
-          totalTerms: 480,
-        ),
-      ],
-      strongestUnits: [
-        UnitProgressData(
-          unitId: '1',
-          unitName: 'Unit 1',
-          progress: 1.0,
-        ),
-        UnitProgressData(
-          unitId: '3',
-          unitName: 'Unit 3',
-          progress: 0.75,
-        ),
-        UnitProgressData(
-          unitId: '2',
-          unitName: 'Unit 2',
-          progress: 0.71,
-        ),
-      ],
-      weakestUnits: [
-        UnitProgressData(
-          unitId: '6',
-          unitName: 'Unit 6',
-          progress: 0.0,
-        ),
-        UnitProgressData(
-          unitId: '5',
-          unitName: 'Unit 5',
-          progress: 0.12,
-        ),
-        UnitProgressData(
-          unitId: '4',
-          unitName: 'Unit 4',
-          progress: 0.26,
-        ),
-      ],
-      recentExams: [
-        RecentExamItem(
-          id: 'exam-1',
-          dateLabel: 'Today',
-          unitId: '1',
-          unitName: 'Unit 1: Travel & Places',
-          score: 0.50,
-          questionCount: 10,
-        ),
-        RecentExamItem(
-          id: 'exam-2',
-          dateLabel: 'Yesterday',
-          unitId: '2',
-          unitName: 'Unit 2: Work & Career',
-          score: 0.75,
-          questionCount: 15,
-        ),
-        RecentExamItem(
-          id: 'exam-3',
-          dateLabel: 'Jun 17',
-          unitId: '3',
-          unitName: 'Unit 3: Health & Body',
-          score: 0.85,
-          questionCount: 12,
-        ),
-      ],
-      recentCoachFeedback: [
-        RecentCoachItem(
-          id: 'coach-1',
-          dateLabel: 'June 20',
-          word: 'Resilience',
-          sentence: 'Her resilience in difficult situations inspired everyone around her.',
-          rating: 5,
-        ),
-        RecentCoachItem(
-          id: 'coach-2',
-          dateLabel: 'June 19',
-          word: 'Eloquent',
-          sentence: 'The eloquent speaker captivated the entire audience with ease.',
-          rating: 4,
-        ),
-      ],
+      );
+    }
+
+    final examStats = await _loadExamStats(unitSummaries);
+    final recentCoachFeedback = await _loadRecentCoachFeedback();
+
+    return DashboardData(
+      overallProgress: _progress(knownTerms, totalTerms),
+      totalTerms: totalTerms,
+      knownTerms: knownTerms,
+      learnedWordsCount: knownTerms,
+      learningWordsCount: learningWordsCount,
+      starredWordsCount: starredWordsCount,
+      examCount: examStats.examCount,
+      averageExamScore: examStats.averageExamScore,
+      levelProgressList: levelSummaries,
+      strongestUnits: _topUnits(unitSummaries, strongest: true),
+      weakestUnits: _topUnits(unitSummaries, strongest: false),
+      recentExams: examStats.recentExams,
+      recentCoachFeedback: recentCoachFeedback,
     );
   }
+
+  int _countStatus(
+    List<UserWordState> states,
+    WordStatus status, {
+    int knownFallback = 0,
+  }) {
+    final count = states.where((state) => state.status == status).length;
+    return count == 0 && status == WordStatus.know ? knownFallback : count;
+  }
+
+  double _progress(int known, int total) {
+    if (total <= 0) {
+      return 0;
+    }
+    return (known / total).clamp(0, 1).toDouble();
+  }
+
+  List<UnitProgressData> _topUnits(
+    List<UnitProgressData> units, {
+    required bool strongest,
+  }) {
+    final sorted = [...units]
+      ..sort(
+        (a, b) => strongest
+            ? b.progress.compareTo(a.progress)
+            : a.progress.compareTo(b.progress),
+      );
+
+    return sorted.take(3).toList(growable: false);
+  }
+
+  Future<_ExamStats> _loadExamStats(List<UnitProgressData> units) async {
+    final db = await _database.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        e.id,
+        e.date,
+        e.unit_id,
+        e.score,
+        COUNT(q.id) AS question_count
+      FROM exam_history e
+      LEFT JOIN question_history q ON q.exam_id = e.id
+      GROUP BY e.id, e.date, e.unit_id, e.score
+      ORDER BY e.date DESC
+    ''');
+
+    if (rows.isEmpty) {
+      return const _ExamStats(
+        examCount: 0,
+        averageExamScore: 0,
+        recentExams: [],
+      );
+    }
+
+    final averageScore =
+        rows
+            .map((row) => (row['score'] as num? ?? 0).toDouble())
+            .fold<double>(0, (sum, score) => sum + score) /
+        rows.length;
+    final unitNameById = {for (final unit in units) unit.unitId: unit.unitName};
+
+    final recentExams = rows
+        .take(3)
+        .map((row) {
+          final unitId = row['unit_id'] as String? ?? '';
+          return RecentExamItem(
+            id: row['id'] as String? ?? '',
+            dateLabel: _dateLabel(row['date'] as String?),
+            unitId: unitId,
+            unitName: unitNameById[unitId] ?? unitId,
+            score: (row['score'] as num? ?? 0).toDouble(),
+            questionCount: row['question_count'] as int? ?? 0,
+          );
+        })
+        .toList(growable: false);
+
+    return _ExamStats(
+      examCount: rows.length,
+      averageExamScore: averageScore,
+      recentExams: recentExams,
+    );
+  }
+
+  Future<List<RecentCoachItem>> _loadRecentCoachFeedback() async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'coach_history',
+      orderBy: 'date DESC',
+      limit: 3,
+    );
+
+    return rows
+        .map((row) {
+          return RecentCoachItem(
+            id: row['id'] as String? ?? '',
+            dateLabel: _dateLabel(row['date'] as String?),
+            word: row['word'] as String? ?? '',
+            sentence: row['user_sentence'] as String? ?? '',
+            rating: _coachRating(row),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  int _coachRating(Map<String, Object?> row) {
+    const fields = [
+      'grammar_feedback',
+      'vocabulary_feedback',
+      'naturalness_feedback',
+      'suggestion_feedback',
+    ];
+    final nonEmptyFeedbackCount = fields
+        .where((field) => (row[field] as String? ?? '').trim().isNotEmpty)
+        .length;
+    return nonEmptyFeedbackCount.clamp(1, 5).toInt();
+  }
+
+  String _levelName(String code) {
+    switch (code.toLowerCase()) {
+      case 'b1':
+        return 'Intermediate';
+      case 'b2':
+        return 'Upper Intermediate';
+      case 'c1&c2':
+      case 'c1 & c2':
+        return 'Advanced';
+      default:
+        return '';
+    }
+  }
+
+  String _dateLabel(String? value) {
+    if (value == null || value.isEmpty) {
+      return '';
+    }
+
+    final date = DateTime.tryParse(value);
+    if (date == null) {
+      return value;
+    }
+
+    final today = DateTime.now();
+    final currentDate = DateTime(today.year, today.month, today.day);
+    final targetDate = DateTime(date.year, date.month, date.day);
+    final daysAgo = currentDate.difference(targetDate).inDays;
+
+    if (daysAgo == 0) {
+      return 'Today';
+    }
+    if (daysAgo == 1) {
+      return 'Yesterday';
+    }
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+}
+
+class _ExamStats {
+  const _ExamStats({
+    required this.examCount,
+    required this.averageExamScore,
+    required this.recentExams,
+  });
+
+  final int examCount;
+  final double averageExamScore;
+  final List<RecentExamItem> recentExams;
 }
