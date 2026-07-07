@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/utils/async_utils.dart';
 import '../../../../shared/vocabulary/application/services/i_vocabulary_service.dart';
 import '../../../../shared/vocabulary/domain/entities/level.dart';
 import '../../../../shared/word_state/application/services/word_state_store.dart';
@@ -16,6 +17,8 @@ class LevelListViewModel extends ChangeNotifier {
         _database = database ?? getIt<AppDatabase>() {
     _store.addListener(_onStoreChanged);
   }
+
+  static const _termFetchConcurrency = 4;
 
   final IVocabularyService _vocabularyService;
   final WordStateStore _store;
@@ -44,7 +47,9 @@ class LevelListViewModel extends ChangeNotifier {
   }
 
   bool isLoading = false;
+  bool isReloading = false;
   String? errorMessage;
+  String? reloadProgress;
   int currentStreak = 0;
 
   /// Per-level aggregates: code, total terms, and the unit ids that compose it.
@@ -90,15 +95,54 @@ class LevelListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final baseLevels = await _vocabularyService.getLevels();
+      await _fetchLevels();
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
-      final futureAggregates = baseLevels.map((level) async {
-        final units = await _vocabularyService.getUnits(level.code);
+  Future<void> reloadLevels() async {
+    if (isLoading || isReloading) {
+      return;
+    }
 
-        var totalTerms = 0;
-        final unitIds = <String>[];
+    isReloading = true;
+    errorMessage = null;
+    reloadProgress = 'Preparing refresh...';
+    notifyListeners();
 
-        final futureUnitStats = units.map((unit) async {
+    try {
+      await _vocabularyService.clearCache();
+      await _fetchLevels(trackProgress: true);
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      isReloading = false;
+      reloadProgress = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _fetchLevels({bool trackProgress = false}) async {
+    final baseLevels = await _vocabularyService.getLevels();
+    final aggregates = <_LevelAggregate>[];
+
+    for (var levelIndex = 0; levelIndex < baseLevels.length; levelIndex++) {
+      final level = baseLevels[levelIndex];
+      if (trackProgress) {
+        reloadProgress =
+            'Refreshing ${level.code.toUpperCase()} (${levelIndex + 1}/${baseLevels.length})...';
+        notifyListeners();
+      }
+
+      final units = await _vocabularyService.getUnits(level.code);
+      final stats = await mapLimitedConcurrent(
+        units,
+        _termFetchConcurrency,
+        (unit) async {
           try {
             final terms = await _vocabularyService.getTerms(
               levelCode: level.code,
@@ -109,28 +153,32 @@ class LevelListViewModel extends ChangeNotifier {
           } catch (_) {
             return (unit.id, 0);
           }
-        });
+        },
+      );
 
-        for (final stat in await Future.wait(futureUnitStats)) {
-          unitIds.add(stat.$1);
-          totalTerms += stat.$2;
-        }
+      var totalTerms = 0;
+      final unitIds = <String>[];
+      for (final stat in stats) {
+        unitIds.add(stat.$1);
+        totalTerms += stat.$2;
+      }
 
-        return _LevelAggregate(
+      aggregates.add(
+        _LevelAggregate(
           code: level.code,
           totalTerms: totalTerms,
           unitIds: unitIds,
-        );
-      });
+        ),
+      );
 
-      _aggregates = await Future.wait(futureAggregates);
-      currentStreak = await _loadCurrentStreak();
-    } catch (error) {
-      errorMessage = error.toString();
-    } finally {
-      isLoading = false;
-      notifyListeners();
+      if (trackProgress) {
+        _aggregates = List<_LevelAggregate>.of(aggregates);
+        notifyListeners();
+      }
     }
+
+    _aggregates = aggregates;
+    currentStreak = await _loadCurrentStreak();
   }
 
   Future<int> _loadCurrentStreak() async {
