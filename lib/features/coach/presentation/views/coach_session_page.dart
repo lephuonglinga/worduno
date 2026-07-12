@@ -331,7 +331,20 @@ class _WordCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _ListenButton(onTap: () => TtsHelper.speak(word.term.text)),
+              _ListenButton(
+                onTap: () async {
+                  final ok = await TtsHelper.speak(word.term.text);
+                  if (!ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Unable to play audio. Please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
           if (showDefinition) ...[

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/network/connectivity_service.dart';
 import '../../core/network/dio_client.dart';
 import '../../features/coach/application/services/coach_service_impl.dart';
 import '../../features/coach/application/services/i_coach_service.dart';
@@ -54,7 +55,10 @@ Future<void> setupDependencies() async {
     return;
   }
 
-  getIt.registerLazySingleton<Dio>(DioClient.create);
+  getIt.registerLazySingleton<ConnectivityService>(ConnectivityService.new);
+  getIt.registerLazySingleton<Dio>(
+    () => DioClient.create(connectivity: getIt<ConnectivityService>()),
+  );
   getIt.registerLazySingleton<AppDatabase>(AppDatabase.new);
 
   getIt.registerLazySingleton<IVocabularyRemoteDataSource>(

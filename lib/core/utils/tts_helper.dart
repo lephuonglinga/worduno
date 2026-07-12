@@ -5,14 +5,19 @@ class TtsHelper {
 
   static final FlutterTts _tts = FlutterTts();
 
-  static Future<void> speak(String text) async {
+  /// Speaks [text]. Returns `true` on success, `false` if TTS fails.
+  static Future<bool> speak(String text) async {
     try {
       await _tts.setLanguage('en-US');
       await _tts.setSpeechRate(0.5);
       await _tts.setVolume(1.0);
-      await _tts.speak(text);
-    } catch (e) {
-      // Silently catch TTS issues
+      final result = await _tts.speak(text);
+      if (result is int) {
+        return result == 1;
+      }
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }

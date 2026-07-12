@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/network/dio_error_message.dart';
 import '../../../../shared/vocabulary/application/services/i_vocabulary_service.dart';
 import '../../../../shared/vocabulary/domain/entities/level.dart';
 import '../../../../shared/word_state/application/services/word_state_store.dart';
@@ -126,7 +127,7 @@ class LevelListViewModel extends ChangeNotifier {
       _aggregates = await Future.wait(futureAggregates);
       currentStreak = await _loadCurrentStreak();
     } catch (error) {
-      errorMessage = error.toString();
+      errorMessage = messageFromError(error);
     } finally {
       isLoading = false;
       notifyListeners();
