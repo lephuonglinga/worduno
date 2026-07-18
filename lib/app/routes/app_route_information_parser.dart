@@ -10,12 +10,12 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
     final location = routeInformation.uri.path;
 
     switch (location) {
+      case '/study':
+        return AppRoutePath.initial().copyWith(tab: AppTab.study);
       case '/dashboard':
         return AppRoutePath.initial().copyWith(tab: AppTab.dashboard);
-      case '/exam-history':
-        return AppRoutePath.initial().copyWith(tab: AppTab.examHistory);
-      case '/coach-history':
-        return AppRoutePath.initial().copyWith(tab: AppTab.coachHistory);
+      case '/profile':
+        return AppRoutePath.initial().copyWith(tab: AppTab.profile);
       default:
         return AppRoutePath.initial();
     }
@@ -25,9 +25,9 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
   RouteInformation restoreRouteInformation(AppRoutePath configuration) {
     final location = switch (configuration.tab) {
       AppTab.home => '/',
+      AppTab.study => '/study',
       AppTab.dashboard => '/dashboard',
-      AppTab.examHistory => '/exam-history',
-      AppTab.coachHistory => '/coach-history',
+      AppTab.profile => '/profile',
     };
 
     return RouteInformation(uri: Uri.parse(location));

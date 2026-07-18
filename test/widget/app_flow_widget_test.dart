@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worduno/app/app.dart';
 import 'package:worduno/app/di/injection.dart';
+import 'package:worduno/core/constants/app_constants.dart';
 import '../helpers/test_app_setup.dart';
 import 'package:worduno/features/dashboard/application/services/i_dashboard_service.dart';
 import 'package:worduno/shared/vocabulary/application/services/i_vocabulary_service.dart';
@@ -8,6 +10,7 @@ import 'package:worduno/shared/vocabulary/domain/entities/term.dart';
 
 import '../helpers/fakes.dart';
 import '../helpers/test_database.dart';
+
 void main() {
   initTestDatabase();
 
@@ -16,6 +19,10 @@ void main() {
   });
 
   Future<void> registerTestFakes() async {
+    SharedPreferences.setMockInitialValues({
+      AppConstants.hasSeenOnboardingKey: true,
+    });
+
     if (getIt.isRegistered<IVocabularyService>()) {
       await getIt.unregister<IVocabularyService>();
     }
@@ -43,11 +50,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Stats'), findsOneWidget);
-      expect(find.text('History'), findsOneWidget);
-      expect(find.text('AI'), findsOneWidget);
-      expect(find.text('Your Levels'), findsOneWidget);
+      expect(find.text('Trang chủ'), findsOneWidget);
+      expect(find.text('Học tập'), findsOneWidget);
+      expect(find.text('Thống kê'), findsOneWidget);
+      expect(find.text('Hồ sơ'), findsOneWidget);
+      expect(find.text('Lexia'), findsWidgets);
     });
 
     testWidgets('bottom navigation switches to dashboard', (tester) async {
@@ -55,16 +62,19 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      await tester.tap(find.text('Stats'));
+      await tester.tap(find.text('Thống kê'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Dashboard'), findsOneWidget);
-      expect(find.text('OVERALL PROGRESS'), findsOneWidget);
+      expect(find.text('Thống kê'), findsWidgets);
     });
 
-    testWidgets('home navigation opens unit list', (tester) async {
+    testWidgets('study tab opens level list', (tester) async {
       await tester.pumpWidget(const WordunoApp());
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.text('Học tập'));
       await tester.pump();
       for (var i = 0; i < 50; i++) {
         await tester.pump(const Duration(milliseconds: 200));
@@ -72,7 +82,7 @@ void main() {
       }
 
       if (find.text('B1').evaluate().isEmpty) {
-        expect(find.text('Your Levels'), findsOneWidget);
+        expect(find.text('Học tập'), findsWidgets);
         return;
       }
 

@@ -1,19 +1,17 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/tts/presentation/speak_term.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_navigation_widgets.dart';
-import '../../../../core/tts/presentation/speak_term.dart';
 import '../../../../shared/vocabulary/domain/entities/term.dart';
+import '../../../../shared/word_state/domain/entities/word_status.dart';
 import '../viewmodels/learn_session_view_model.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Page entry point — owns ViewModel lifecycle
-// ─────────────────────────────────────────────────────────────────────────────
 
 class LearnSessionPage extends StatefulWidget {
   const LearnSessionPage({
@@ -65,10 +63,6 @@ class _LearnSessionPageState extends State<LearnSessionPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// View
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _LearnSessionView extends StatefulWidget {
   const _LearnSessionView();
 
@@ -96,30 +90,61 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
     setState(() => _markAnim = null);
   }
 
+  String _statusKey(WordStatus status) => switch (status) {
+        WordStatus.know => 'learned',
+        WordStatus.learning => 'learning',
+        WordStatus.newWord => 'new',
+      };
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LearnSessionViewModel>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: vm.isLoading
-            ? const AppLoading(message: 'Loading session...')
-            : vm.errorMessage != null
-                ? AppErrorView(
-                    message: vm.errorMessage!,
-                    onRetry: vm.loadSession,
-                  )
-                : vm.isEmptySession
-                    ? _buildEmptyScreen(context)
-                    : vm.isCompleted
-                        ? _buildCompletionScreen(context, vm)
-                        : _buildSessionScreen(context, vm),
+      backgroundColor: AppColors.cream,
+      appBar: WordunoAppBar(
+        title: 'Đang học',
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Đang học',
+              style: TextStyle(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              vm.unitName,
+              style: const TextStyle(
+                color: AppColors.inkSoft,
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+        centerTitle: false,
       ),
+      body: vm.isLoading
+          ? const AppLoading(message: 'Đang tải...')
+          : vm.errorMessage != null
+              ? AppErrorView(
+                  message: vm.errorMessage!,
+                  onRetry: vm.loadSession,
+                )
+              : vm.isEmptySession
+                  ? _buildEmptyScreen(context)
+                  : vm.isCompleted
+                      ? _buildCompletionScreen(context)
+                      : _buildSessionScreen(context, vm),
     );
   }
 
-  Widget _buildCompletionScreen(BuildContext context, LearnSessionViewModel vm) {
+  Widget _buildCompletionScreen(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -130,19 +155,19 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: AppColors.green,
-                shape: BoxShape.circle,
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
                 boxShadow: AppDecorations.shadowMd,
               ),
               child: const Icon(
-                Icons.check_circle_rounded,
-                size: 50,
-                color: AppColors.greenDark,
+                Icons.check_circle_outline,
+                size: 48,
+                color: AppColors.mintInk,
               ),
             ),
             const SizedBox(height: 28),
             const Text(
-              'Congratulations!',
+              'Hoàn thành!',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
@@ -151,28 +176,29 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
             ),
             const SizedBox(height: 12),
             const Text(
-              "You've completed this learn session! Go back to vocabulary list to see your progress.",
+              'Bạn đã học xong unit này. Quay lại danh sách từ để xem tiến độ.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.mid,
+                color: AppColors.inkSoft,
                 height: 1.45,
               ),
             ),
             const SizedBox(height: 32),
             _ScaleButton(
-              onTap: () {
-                AppBackButton.handleDefaultBack(context);
-              },
+              onTap: () => AppBackButton.handleDefaultBack(context),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: AppDecorations.pillButton(AppColors.greenDark),
+                decoration: BoxDecoration(
+                  color: AppColors.lavender,
+                  borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+                ),
                 child: const Center(
                   child: Text(
-                    'Back to List',
+                    'Về danh sách từ',
                     style: TextStyle(
-                      color: AppColors.white,
+                      color: AppColors.lavenderInk,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -186,10 +212,6 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Empty screen (unit has no terms)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   Widget _buildEmptyScreen(BuildContext context) {
     return Center(
       child: Padding(
@@ -198,31 +220,28 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'No terms available to learn.',
+              'Không có từ để học.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.mid,
+                color: AppColors.inkSoft,
               ),
             ),
             const SizedBox(height: 20),
             _ScaleButton(
-              onTap: () {
-                AppBackButton.handleDefaultBack(context);
-              },
+              onTap: () => AppBackButton.handleDefaultBack(context),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.greenDark,
-                  borderRadius:
-                      BorderRadius.circular(AppDecorations.radiusSm),
+                  color: AppColors.lavender,
+                  borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
                 ),
                 child: const Text(
-                  'Back to List',
+                  'Quay lại',
                   style: TextStyle(
-                    color: AppColors.white,
+                    color: AppColors.lavenderInk,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -235,163 +254,61 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Session screen
-  // ─────────────────────────────────────────────────────────────────────────────
-
   Widget _buildSessionScreen(BuildContext context, LearnSessionViewModel vm) {
     final currentTerm = vm.currentTerm;
     if (currentTerm == null) {
       return const Center(
-        child: Text('No terms available to learn.'),
+        child: Text(
+          'Không có từ để học.',
+          style: TextStyle(color: AppColors.inkSoft),
+        ),
       );
     }
 
     final isStarred = vm.currentStarred;
-    final progress = vm.progress;
-    final progressText = vm.progressLabel;
+    final softPal = AppColors.wordStatusSoft(_statusKey(vm.currentStatus));
 
-    return Column(
-      children: [
-        // ── Header Row: Back button, Progress bar ───────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10, 10, 20, 0),
-          child: Row(
-            children: [
-              _ScaleButton(
-                onTap: () {
-                  AppBackButton.handleDefaultBack(context);
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 19,
-                    color: AppColors.ink,
-                  ),
-                ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Còn lại ${vm.remainingCards} thẻ',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.inkSoft,
               ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 7,
-                    backgroundColor: AppColors.border,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.greenDark),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                progressText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.mid,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-
-        // ── Title Row: Unit Name, Undo, Shuffle ────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        vm.unitName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (vm.canUndo) ...[
-                      const SizedBox(width: 8),
-                      _ScaleButton(
-                        onTap: vm.undo,
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: AppColors.surface,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.undo_rounded,
-                            size: 15,
-                            color: AppColors.mid,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
+            child: LinearProgressIndicator(
+              value: vm.progress,
+              minHeight: 9,
+              backgroundColor: AppColors.line,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.mintInk,
               ),
-              const SizedBox(width: 12),
-              // Shuffle button
-              _ScaleButton(
-                onTap: vm.shuffle,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.greenDark,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.shuffle_rounded,
-                        size: 14,
-                        color: AppColors.greenDark,
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Shuffle',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.greenDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 18),
 
-        // ── Large interactive 3D Flip Card ─────────────────────────
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          // Flashcard
+          Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _markAnim == null ? vm.flipCard : null,
-              onHorizontalDragStart: (_) {
-                _dragDx = 0;
-              },
+              onHorizontalDragStart: (_) => _dragDx = 0,
               onHorizontalDragUpdate: (details) {
                 _dragDx += details.delta.dx;
               },
               onHorizontalDragEnd: (details) {
                 if (_markAnim != null) return;
                 final velocity = details.primaryVelocity ?? 0;
-                // Prefer distance for slow swipes; velocity for flicks.
                 if (_dragDx <= -64 || velocity < -200) {
                   _markWithAnim(vm, vm.markKnow, 'know');
                 } else if (_dragDx >= 64 || velocity > 200) {
@@ -400,7 +317,10 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
                 _dragDx = 0;
               },
               child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0, end: vm.isFlipped ? math.pi : 0),
+                tween: Tween<double>(
+                  begin: 0,
+                  end: vm.isFlipped ? math.pi : 0,
+                ),
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.easeInOut,
                 builder: (context, val, child) {
@@ -424,53 +344,30 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
                           ? Transform(
                               alignment: Alignment.center,
                               transform: Matrix4.identity()..rotateY(math.pi),
-                              child: _buildCardBack(currentTerm, isStarred, vm),
+                              child: _buildCardBack(currentTerm, softPal),
                             )
-                          : _buildCardFront(currentTerm, isStarred, vm),
+                          : _buildCardFront(currentTerm),
                     ),
                   );
                 },
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
 
-        // ── Audio speaker control ──────────────────────────────────
-        _ScaleButton(
-          onTap: () => _speak(currentTerm.text),
-          child: Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.blue,
-              shape: BoxShape.circle,
-              boxShadow: AppDecorations.shadowSm,
-            ),
-            child: const Icon(
-              Icons.volume_up_outlined,
-              size: 24,
-              color: AppColors.greenDark,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // ── Bottom Buttons ─────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-          child: Row(
+          // Learning / Know actions (preview)
+          Row(
             children: [
-              // Still learning button
               Expanded(
                 child: _ScaleButton(
-                  onTap: () => _markWithAnim(vm, vm.markLearning, 'learning'),
+                  onTap: () =>
+                      _markWithAnim(vm, vm.markLearning, 'learning'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.errorBg,
+                      color: AppColors.peach,
                       borderRadius:
-                          BorderRadius.circular(AppDecorations.radiusLg),
+                          BorderRadius.circular(AppDecorations.radiusBtn),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -478,13 +375,13 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
                         Icon(
                           Icons.refresh_rounded,
                           size: 18,
-                          color: AppColors.coralDark,
+                          color: AppColors.peachInk,
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'Still Learning',
+                          'Đang học',
                           style: TextStyle(
-                            color: AppColors.coralDark,
+                            color: AppColors.peachInk,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -494,17 +391,16 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
-              // I know this button
+              const SizedBox(width: 10),
               Expanded(
                 child: _ScaleButton(
                   onTap: () => _markWithAnim(vm, vm.markKnow, 'know'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.green,
+                      color: AppColors.mint,
                       borderRadius:
-                          BorderRadius.circular(AppDecorations.radiusLg),
+                          BorderRadius.circular(AppDecorations.radiusBtn),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -512,13 +408,13 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
                         Icon(
                           Icons.check_rounded,
                           size: 18,
-                          color: AppColors.greenDark,
+                          color: AppColors.mintInk,
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'I Know This',
+                          'Đã thuộc',
                           style: TextStyle(
-                            color: AppColors.greenDark,
+                            color: AppColors.mintInk,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -530,167 +426,181 @@ class _LearnSessionViewState extends State<_LearnSessionView> {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
+          const SizedBox(height: 14),
 
-  Widget _buildCardFront(
-    Term currentTerm,
-    bool isStarred,
-    LearnSessionViewModel vm,
-  ) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: AppDecorations.card().copyWith(
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Stack(
-        children: [
-          // Star button in top right
-          Positioned(
-            top: 20,
-            right: 20,
-            child: _ScaleButton(
-              onTap: vm.toggleStarCurrent,
-              child: Icon(
-                isStarred
+          // Toolbar: undo · shuffle · star · speaker
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ToolbarBtn(
+                icon: Icons.undo_rounded,
+                enabled: vm.canUndo,
+                onTap: vm.canUndo ? vm.undo : null,
+              ),
+              const SizedBox(width: 10),
+              _ToolbarBtn(
+                icon: Icons.shuffle_rounded,
+                onTap: vm.shuffle,
+              ),
+              const SizedBox(width: 10),
+              _ToolbarBtn(
+                icon: isStarred
                     ? Icons.star_rounded
                     : Icons.star_outline_rounded,
-                size: 26,
-                color: isStarred
-                    ? AppColors.coralMid
-                    : AppColors.light,
+                ink: isStarred ? AppColors.sunInk : AppColors.ink,
+                onTap: vm.toggleStarCurrent,
               ),
-            ),
-          ),
-
-          // Main content
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'WORD',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.light,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    currentTerm.text,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Tap to reveal',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.light,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 10),
+              _ToolbarBtn(
+                icon: Icons.volume_up_outlined,
+                onTap: () => _speak(currentTerm.text),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCardBack(
-    Term currentTerm,
-    bool isStarred,
-    LearnSessionViewModel vm,
-  ) {
+  Widget _buildCardFront(Term currentTerm) {
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.blue,
-        borderRadius: BorderRadius.circular(28),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
+        border: Border.all(color: AppColors.line, width: 1.5),
         boxShadow: AppDecorations.shadowMd,
       ),
-      child: Stack(
-        children: [
-          // Star button in top right
-          Positioned(
-            top: 20,
-            right: 20,
-            child: _ScaleButton(
-              onTap: vm.toggleStarCurrent,
-              child: Icon(
-                isStarred
-                    ? Icons.star_rounded
-                    : Icons.star_outline_rounded,
-                size: 26,
-                color: isStarred
-                    ? AppColors.coralMid
-                    : AppColors.light,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'TỪ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink.withValues(alpha: 0.4),
+                letterSpacing: 1.2,
               ),
             ),
-          ),
+            const SizedBox(height: 14),
+            Text(
+              currentTerm.text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Chạm để lật',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.ink.withValues(alpha: 0.45),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          // Main content
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'DEFINITION',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.mid,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    currentTerm.definition,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.ink,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Tap to show word',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mid,
-                    ),
-                  ),
-                ],
+  Widget _buildCardBack(Term currentTerm, WordStatusPalette softPal) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: softPal.bg,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
+        boxShadow: AppDecorations.shadowMd,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'NGHĨA',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: softPal.fg.withValues(alpha: 0.65),
+                letterSpacing: 1.2,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            Text(
+              currentTerm.definition,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Chạm để xem từ',
+              style: TextStyle(
+                fontSize: 13,
+                color: softPal.fg.withValues(alpha: 0.55),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Reusable Scale Button for tactile micro-interactions
-// ─────────────────────────────────────────────────────────────────────────────
+class _ToolbarBtn extends StatelessWidget {
+  const _ToolbarBtn({
+    required this.icon,
+    this.onTap,
+    this.enabled = true,
+    this.ink,
+  });
+
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool enabled;
+  final Color? ink;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled
+        ? (ink ?? AppColors.ink)
+        : AppColors.inkSoft.withValues(alpha: 0.35);
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.line, width: 1.5),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _ScaleButton extends StatefulWidget {
   const _ScaleButton({
@@ -705,7 +615,8 @@ class _ScaleButton extends StatefulWidget {
   State<_ScaleButton> createState() => _ScaleButtonState();
 }
 
-class _ScaleButtonState extends State<_ScaleButton> with SingleTickerProviderStateMixin {
+class _ScaleButtonState extends State<_ScaleButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 

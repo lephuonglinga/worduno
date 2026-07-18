@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../../../core/network/dio_error_message.dart';
+import '../../../../core/utils/activity_prefs.dart';
 import '../../../../shared/vocabulary/domain/entities/term.dart';
 import '../../../../shared/word_state/application/services/word_state_store.dart';
 import '../../../../shared/word_state/domain/entities/word_status.dart';
@@ -75,6 +76,15 @@ class LearnSessionViewModel extends ChangeNotifier {
     return _store.stateFor(unitId: _unitId, termId: term.id).isStarred;
   }
 
+  WordStatus get currentStatus {
+    final term = currentTerm;
+    if (term == null) return WordStatus.newWord;
+    return _session?.statusOf(term.id) ??
+        _store.stateFor(unitId: _unitId, termId: term.id).status;
+  }
+
+  int get remainingCards => _session?.activeQueueLength ?? 0;
+
   Future<void> loadSession() async {
     isLoading = true;
     errorMessage = null;
@@ -127,6 +137,11 @@ class LearnSessionViewModel extends ChangeNotifier {
         termId: term.id,
         status: status,
       );
+      if (status == WordStatus.know) {
+        try {
+          await ActivityPrefs.recordKnow();
+        } catch (_) {}
+      }
     } catch (error) {
       debugPrint('LearnSession: failed to persist status for ${term.id}: $error');
     }

@@ -4,8 +4,8 @@ enum CoachStarFilter {
   notStarred;
 
   String get label => switch (this) {
-        CoachStarFilter.all => 'All words',
-        CoachStarFilter.starred => 'Starred',
-        CoachStarFilter.notStarred => 'Not starred',
+        CoachStarFilter.all => 'Tất cả',
+        CoachStarFilter.starred => 'Yêu thích',
+        CoachStarFilter.notStarred => 'Chưa yêu thích',
       };
 }

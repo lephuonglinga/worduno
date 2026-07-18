@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_banner.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
@@ -61,12 +62,12 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
     return ChangeNotifierProvider<CoachConfigViewModel>.value(
       value: _viewModel,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: const WordunoAppBar(title: 'AI Coach'),
+        backgroundColor: AppColors.cream,
+        appBar: const WordunoAppBar(title: 'Thiết lập AI Coach'),
         body: Consumer<CoachConfigViewModel>(
           builder: (context, vm, _) {
             if (vm.isLoading) {
-              return const AppLoading(message: 'Loading coach options...');
+              return const AppLoading(message: 'Đang tải tuỳ chọn Coach...');
             }
             if (vm.initErrorMessage != null) {
               return AppErrorView(
@@ -93,7 +94,7 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                     runSpacing: 8,
                     children: [
                       _ChoiceChip(
-                        label: 'All levels',
+                        label: 'Tất cả level',
                         selected: vm.allLevelsSelected,
                         onTap: vm.selectAllLevels,
                       ),
@@ -111,11 +112,11 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                   const SizedBox(height: 10),
                   _DropdownField<String?>(
                     value: vm.allUnitsSelected ? null : vm.selectedUnitKey,
-                    hint: 'All units',
+                    hint: 'Tất cả Unit',
                     items: [
                       const DropdownMenuItem<String?>(
                         value: null,
-                        child: Text('All units'),
+                        child: Text('Tất cả Unit'),
                       ),
                       for (final unit in vm.unitOptions)
                         DropdownMenuItem<String?>(
@@ -127,7 +128,7 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                   ),
                   const SizedBox(height: 24),
                 ],
-                _SectionTitle('Word filter'),
+                _SectionTitle('Bộ lọc từ'),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -147,8 +148,8 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: LinearProgressIndicator(
-                      color: AppColors.coralMid,
-                      backgroundColor: AppColors.border,
+                      color: FeatureSignatures.coachInk,
+                      backgroundColor: AppColors.line,
                     ),
                   )
                 else
@@ -178,7 +179,7 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                             ? () => vm.setWordCount(vm.wordCount - 1)
                             : null,
                         icon: const Icon(Icons.remove_circle_outline),
-                        color: AppColors.coralMid,
+                        color: FeatureSignatures.coachInk,
                       ),
                       Expanded(
                         child: Slider(
@@ -188,7 +189,7 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                           divisions: vm.maxSelectableWordCount > 1
                               ? vm.maxSelectableWordCount - 1
                               : 1,
-                          activeColor: AppColors.coralMid,
+                          activeColor: FeatureSignatures.coachInk,
                           label: '${vm.wordCount}',
                           onChanged: (v) => vm.setWordCount(v.round()),
                         ),
@@ -198,17 +199,17 @@ class _CoachConfigPageState extends State<CoachConfigPage> {
                             ? () => vm.setWordCount(vm.wordCount + 1)
                             : null,
                         icon: const Icon(Icons.add_circle_outline),
-                        color: AppColors.coralMid,
+                        color: FeatureSignatures.coachInk,
                       ),
                     ],
                   ),
                   Center(
                     child: Text(
-                      '${vm.wordCount} words',
+                      '${vm.wordCount} từ',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.coralDark,
+                        color: FeatureSignatures.coachInk,
                       ),
                     ),
                   ),
@@ -269,11 +270,16 @@ class _InfoCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.beigeLight,
-              borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
+            decoration: const BoxDecoration(
+              color: FeatureSignatures.coachBg,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(18),
+              ),
             ),
-            child: Icon(icon, color: AppColors.greenMid),
+            child: Icon(icon, color: FeatureSignatures.coachInk),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -324,10 +330,11 @@ class _ChoiceChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.greenDark : AppColors.white,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
+          color: selected ? FeatureSignatures.coachBg : AppColors.card,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
           border: Border.all(
-            color: selected ? AppColors.greenDark : AppColors.border,
+            color: selected ? FeatureSignatures.coachBg : AppColors.line,
+            width: 1.5,
           ),
         ),
         child: Text(
@@ -335,7 +342,7 @@ class _ChoiceChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: selected ? AppColors.white : AppColors.ink,
+            color: selected ? FeatureSignatures.coachInk : AppColors.inkSoft,
           ),
         ),
       ),
@@ -396,12 +403,12 @@ class _StartButton extends StatelessWidget {
       height: 54,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: enabled ? AppColors.coralDark : AppColors.light,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          color: enabled ? FeatureSignatures.coachBg : AppColors.line,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
           boxShadow: enabled
               ? [
                   BoxShadow(
-                    color: AppColors.coralDark.withValues(alpha: 0.2),
+                    color: FeatureSignatures.coachInk.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 6),
                   ),
@@ -411,7 +418,7 @@ class _StartButton extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+            borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
             onTap: enabled && !loading ? onTap : null,
             child: Center(
               child: loading
@@ -420,18 +427,21 @@ class _StartButton extends StatelessWidget {
                       height: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: AppColors.white,
+                        color: FeatureSignatures.coachInk,
                       ),
                     )
                   : const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.smart_toy_rounded, color: AppColors.white),
+                        Icon(
+                          FeatureSignatures.coachIcon,
+                          color: FeatureSignatures.coachInk,
+                        ),
                         SizedBox(width: 8),
                         Text(
-                          'Start Coach Session',
+                          'Bắt đầu luyện với AI',
                           style: TextStyle(
-                            color: AppColors.white,
+                            color: FeatureSignatures.coachInk,
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                           ),

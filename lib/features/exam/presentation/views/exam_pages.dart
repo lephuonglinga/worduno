@@ -7,6 +7,7 @@ import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../app/routes/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_banner.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
@@ -69,7 +70,7 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
     try {
       await _viewModel.startExam();
       if (!mounted) return;
-      context.read<AppNavigationNotifier>().openHomeRoute(
+      context.read<AppNavigationNotifier>().pushActiveStackRoute(
             HomeRoutePaths.examSession,
           );
     } catch (_) {}
@@ -80,14 +81,14 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
     return ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: AppColors.cream,
         appBar: WordunoAppBar(
-          title: 'Create Exam',
+          title: 'Thiết lập kiểm tra',
           titleWidget: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Create Exam',
+                'Thiết lập kiểm tra',
                 style: TextStyle(
                   color: AppColors.ink,
                   fontWeight: FontWeight.w800,
@@ -96,9 +97,9 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
               ),
               SizedBox(width: 6),
               Icon(
-                Icons.auto_awesome,
+                FeatureSignatures.examIcon,
                 size: 18,
-                color: AppColors.coralMid,
+                color: FeatureSignatures.examInk,
               ),
             ],
           ),
@@ -106,7 +107,7 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
         body: Consumer<ExamConfigViewModel>(
           builder: (context, vm, _) {
             if (vm.isLoading) {
-              return const AppLoading(message: 'Loading configuration...');
+              return const AppLoading(message: 'Đang tải cấu hình...');
             }
             if (vm.errorMessage != null && vm.levels.isEmpty) {
               return AppErrorView(
@@ -148,7 +149,7 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
                       child: Column(
                         children: [
                           _ExamToggleRow(
-                            label: 'All units',
+                            label: 'Tất cả Unit',
                             value: vm.allUnits,
                             onChanged: vm.setAllUnits,
                           ),
@@ -263,22 +264,23 @@ class _ExamConfigPageState extends State<ExamConfigPage> {
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: vm.canStart ? _startExam : null,
+                        icon: const Icon(FeatureSignatures.examIcon, size: 20),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.coralDark,
-                          disabledBackgroundColor: AppColors.light,
-                          foregroundColor: AppColors.white,
-                          disabledForegroundColor: AppColors.white,
+                          backgroundColor: FeatureSignatures.examBg,
+                          disabledBackgroundColor: AppColors.line,
+                          foregroundColor: FeatureSignatures.examInk,
+                          disabledForegroundColor: AppColors.inkSoft,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
-                              AppDecorations.radiusLg,
+                              AppDecorations.radiusBtn,
                             ),
                           ),
                           elevation: 0,
                         ),
-                        child: Text(
-                          vm.isStarting ? 'Starting...' : 'Start Exam',
+                        label: Text(
+                          vm.isStarting ? 'Đang tạo...' : 'Bắt đầu kiểm tra',
                           style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 16,
@@ -334,7 +336,7 @@ class _ExamSessionPageState extends State<ExamSessionPage> {
     try {
       await _viewModel.submit();
       if (!mounted) return;
-      context.read<AppNavigationNotifier>().openHomeRoute(
+      context.read<AppNavigationNotifier>().pushActiveStackRoute(
             HomeRoutePaths.examResult,
           );
     } catch (_) {}
@@ -345,8 +347,8 @@ class _ExamSessionPageState extends State<ExamSessionPage> {
     return ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: const WordunoAppBar(title: 'Exam'),
+        backgroundColor: AppColors.cream,
+        appBar: const WordunoAppBar(title: 'Kiểm tra'),
         body: Consumer<ExamSessionViewModel>(
           builder: (context, vm, _) {
             final paper = vm.paper;
@@ -395,19 +397,22 @@ class _ExamSessionPageState extends State<ExamSessionPage> {
                 child: SizedBox(
                   width: double.infinity,
                   height: 52,
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: vm.isSubmitting ? null : _submit,
+                    icon: const Icon(FeatureSignatures.examIcon, size: 20),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.coralDark,
-                      foregroundColor: AppColors.white,
+                      backgroundColor: FeatureSignatures.examBg,
+                      foregroundColor: FeatureSignatures.examInk,
+                      disabledBackgroundColor: AppColors.line,
+                      disabledForegroundColor: AppColors.inkSoft,
                       shape: RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(AppDecorations.radiusSm),
+                            BorderRadius.circular(AppDecorations.radiusBtn),
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      vm.isSubmitting ? 'Submitting...' : 'Submit Exam',
+                    label: Text(
+                      vm.isSubmitting ? 'Đang nộp...' : 'Nộp bài',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -468,10 +473,18 @@ class _QuestionCardState extends State<_QuestionCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.card(),
-      child: Column(
+    return Material(
+      color: AppColors.card,
+      elevation: 0,
+      shadowColor: AppColors.ink.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+          boxShadow: AppDecorations.shadowMd,
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -481,14 +494,14 @@ class _QuestionCardState extends State<_QuestionCard> {
                 height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.beigeLight,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.lavender,
+                  borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
                 ),
                 child: Text(
                   '${widget.index}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.coralDark,
+                    color: AppColors.lavenderInk,
                   ),
                 ),
               ),
@@ -518,6 +531,7 @@ class _QuestionCardState extends State<_QuestionCard> {
           _buildInput(),
         ],
       ),
+      ),
     );
   }
 
@@ -543,7 +557,7 @@ class _QuestionCardState extends State<_QuestionCard> {
             title: Text(option),
             value: option,
             groupValue: widget.answer,
-            activeColor: AppColors.coralDark,
+            activeColor: AppColors.lavenderInk,
             onChanged: (value) {
               if (value != null) widget.onChanged(value);
             },
@@ -695,8 +709,8 @@ class _ExamResultPageState extends State<ExamResultPage> {
     return ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: const WordunoAppBar(title: 'Exam Result', showBack: false),
+        backgroundColor: AppColors.cream,
+        appBar: const WordunoAppBar(title: 'Kết quả kiểm tra', showBack: false),
         body: Consumer<ExamResultViewModel>(
           builder: (context, vm, _) {
             final result = vm.result;
@@ -712,7 +726,7 @@ class _ExamResultPageState extends State<ExamResultPage> {
                     child: TextButton.icon(
                       onPressed: vm.toggleReview,
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back to summary'),
+                      label: const Text('Về tổng kết'),
                     ),
                   ),
                   Expanded(child: _ReviewList(result: result)),
@@ -731,15 +745,21 @@ class _ExamResultPageState extends State<ExamResultPage> {
                   child: OutlinedButton(
                     onPressed: vm.toggleReview,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.coralDark,
-                      side: const BorderSide(color: AppColors.coralDark),
+                      foregroundColor: FeatureSignatures.examInk,
+                      side: const BorderSide(
+                        color: FeatureSignatures.examBg,
+                        width: 1.5,
+                      ),
+                      backgroundColor: FeatureSignatures.examBg.withValues(
+                        alpha: 0.35,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(AppDecorations.radiusSm),
+                            BorderRadius.circular(AppDecorations.radiusBtn),
                       ),
                     ),
                     child: const Text(
-                      'Review Answers',
+                      'Xem đáp án',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -755,16 +775,16 @@ class _ExamResultPageState extends State<ExamResultPage> {
                           .resetHomeToRoot();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.coralDark,
-                      foregroundColor: AppColors.white,
+                      backgroundColor: AppColors.lavender,
+                      foregroundColor: AppColors.lavenderInk,
                       shape: RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(AppDecorations.radiusSm),
+                            BorderRadius.circular(AppDecorations.radiusBtn),
                       ),
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Back to Home',
+                      'Về trang chủ',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -864,7 +884,7 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = answer.isCorrect ? AppColors.greenDark : AppColors.error;
+    final color = answer.isCorrect ? AppColors.mintInk : FeatureSignatures.examInk;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -953,30 +973,139 @@ class _ExamHistoryPageState extends State<ExamHistoryPage> {
 
     return ChangeNotifierProvider.value(
       value: _viewModel,
-      child: Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: const WordunoAppBar(title: 'Exam History'),
-        body: Consumer<ExamHistoryViewModel>(
-          builder: (context, vm, _) {
-            if (vm.isLoading) {
-              return const AppLoading(message: 'Loading history...');
-            }
-            if (vm.errorMessage != null) {
-              return AppErrorView(message: vm.errorMessage!, onRetry: vm.load);
-            }
-            if (vm.items.isEmpty) {
-              return const Center(child: Text('No exams yet.'));
-            }
+      child: Consumer<ExamHistoryViewModel>(
+        builder: (context, vm, _) {
+          final showFab = !vm.isLoading &&
+              vm.errorMessage == null &&
+              vm.items.isNotEmpty;
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: vm.items.length,
-              itemBuilder: (context, index) {
-                final item = vm.items[index];
-                return _HistoryTile(item: item);
-              },
-            );
-          },
+          return Scaffold(
+            backgroundColor: AppColors.cream,
+            appBar: WordunoAppBar(
+              title: 'Lịch sử kiểm tra',
+              onBack: () =>
+                  context.read<AppNavigationNotifier>().popProfileToHub(),
+            ),
+            floatingActionButton: showFab
+                ? FloatingActionButton.extended(
+                    onPressed: () {
+                      context
+                          .read<AppNavigationNotifier>()
+                          .startExamFromHistory();
+                    },
+                    backgroundColor: FeatureSignatures.examBg,
+                    foregroundColor: FeatureSignatures.examInk,
+                    icon: const Icon(FeatureSignatures.examIcon),
+                    label: const Text(
+                      'Tạo bài kiểm tra',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  )
+                : null,
+            body: _buildBody(context, vm),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, ExamHistoryViewModel vm) {
+    if (vm.isLoading) {
+      return const AppLoading(message: 'Đang tải lịch sử...');
+    }
+    if (vm.errorMessage != null) {
+      return AppErrorView(message: vm.errorMessage!, onRetry: vm.load);
+    }
+    if (vm.items.isEmpty) {
+      return _EmptyExamHistory(
+        onStart: () {
+          context.read<AppNavigationNotifier>().startExamFromHistory();
+        },
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: vm.load,
+      color: FeatureSignatures.examInk,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 88),
+        itemCount: vm.items.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return _HistoryTile(item: vm.items[index]);
+        },
+      ),
+    );
+  }
+}
+
+class _EmptyExamHistory extends StatelessWidget {
+  const _EmptyExamHistory({required this.onStart});
+
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: FeatureSignatures.examBg,
+                borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+              ),
+              child: const Icon(
+                FeatureSignatures.examIcon,
+                size: 36,
+                color: FeatureSignatures.examInk,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Chưa có bài kiểm tra',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Tạo bài kiểm tra để theo dõi tiến độ và xem lại kết quả tại đây.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.inkSoft,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton.icon(
+                onPressed: onStart,
+                icon: const Icon(FeatureSignatures.examIcon),
+                label: const Text(
+                  'Tạo bài kiểm tra',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: FeatureSignatures.examBg,
+                  foregroundColor: FeatureSignatures.examInk,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppDecorations.radiusBtn),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -990,20 +1119,19 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
-      ),
+    return Material(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
       child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+        ),
         title: Text(
           item.unitLabel,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          '${_formatDate(item.date)} • ${item.questionCount} questions',
+          '${_formatDate(item.date)} • ${item.questionCount} câu hỏi',
         ),
         trailing: Text(
           '${item.score.round()}%',
@@ -1051,7 +1179,7 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete exam?'),
+        title: const Text('Xoá bài kiểm tra?'),
         content: const Text('This action cannot be undone.'),
         actions: [
           TextButton(
@@ -1078,9 +1206,9 @@ class _ExamDetailPageState extends State<ExamDetailPage> {
     return ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: AppColors.cream,
         appBar: WordunoAppBar(
-          title: 'Exam Detail',
+          title: 'Chi tiết bài thi',
           actions: [
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppColors.error),
@@ -1135,7 +1263,7 @@ class _HistoryQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.isCorrect ? AppColors.greenDark : AppColors.error;
+    final color = item.isCorrect ? AppColors.mintInk : FeatureSignatures.examInk;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1262,6 +1390,8 @@ class _ExamToggleRow extends StatelessWidget {
         Switch(
           value: value,
           onChanged: onChanged,
+          activeThumbColor: FeatureSignatures.examInk,
+          activeTrackColor: FeatureSignatures.examBg,
         ),
       ],
     );
@@ -1282,17 +1412,17 @@ class _ExamCountChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.beigeLight : AppColors.white,
+      color: selected ? FeatureSignatures.examBg : AppColors.card,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
         side: BorderSide(
-          color: selected ? AppColors.coral : AppColors.border,
+          color: selected ? FeatureSignatures.examBg : AppColors.line,
           width: 1.5,
         ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -1302,7 +1432,7 @@ class _ExamCountChip extends StatelessWidget {
                 const Icon(
                   Icons.check_rounded,
                   size: 16,
-                  color: AppColors.coralDark,
+                  color: FeatureSignatures.examInk,
                 ),
                 const SizedBox(width: 4),
               ],
@@ -1311,7 +1441,7 @@ class _ExamCountChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: selected ? AppColors.coralDark : AppColors.ink,
+                  color: selected ? FeatureSignatures.examInk : AppColors.ink,
                 ),
               ),
             ],
@@ -1337,20 +1467,18 @@ class _ExamTypeCheckboxRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: value
-          ? AppColors.withAlpha27(AppColors.green)
-          : AppColors.surface,
+          ? FeatureSignatures.examBg.withValues(alpha: 0.45)
+          : AppColors.cream,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
         side: BorderSide(
-          color: value
-              ? AppColors.greenMid.withValues(alpha: 0.4)
-              : Colors.transparent,
-          width: 2,
+          color: value ? FeatureSignatures.examBg : AppColors.line,
+          width: 1.5,
         ),
       ),
       child: InkWell(
         onTap: () => onChanged(!value),
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
           child: Row(
@@ -1380,9 +1508,7 @@ class _ExamTypeCheckboxRow extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.withAlpha27(
-                                AppColors.beigeLight,
-                              ),
+                              color: FeatureSignatures.examBg,
                               borderRadius: BorderRadius.circular(
                                 AppDecorations.radiusPill,
                               ),
@@ -1392,7 +1518,7 @@ class _ExamTypeCheckboxRow extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.coralDark,
+                                color: FeatureSignatures.examInk,
                               ),
                             ),
                           ),
@@ -1419,10 +1545,10 @@ class _ExamTypeCheckboxRow extends StatelessWidget {
                 child: Checkbox(
                   value: value,
                   onChanged: onChanged,
-                  activeColor: AppColors.greenDark,
-                  side: const BorderSide(color: AppColors.border, width: 1.5),
+                  activeColor: FeatureSignatures.examInk,
+                  side: const BorderSide(color: AppColors.line, width: 1.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
@@ -1453,8 +1579,8 @@ InputDecoration _examInputDecoration(String hint) {
       borderSide: const BorderSide(color: AppColors.border, width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-      borderSide: const BorderSide(color: AppColors.greenMid, width: 1.5),
+      borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+      borderSide: const BorderSide(color: FeatureSignatures.examInk, width: 1.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
   );
@@ -1464,18 +1590,18 @@ InputDecoration _inputDecoration(String hint) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: AppColors.surface,
+    fillColor: AppColors.card,
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
-      borderSide: BorderSide.none,
+      borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
-      borderSide: BorderSide.none,
+      borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
-      borderSide: const BorderSide(color: AppColors.greenMid, width: 1.5),
+      borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+      borderSide: const BorderSide(color: FeatureSignatures.examInk, width: 1.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
   );

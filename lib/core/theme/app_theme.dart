@@ -6,87 +6,86 @@ import 'app_decorations.dart';
 
 abstract final class AppTheme {
   static ThemeData get light {
-    final textTheme = GoogleFonts.poppinsTextTheme().apply(
+    final body = GoogleFonts.beVietnamProTextTheme().apply(
       bodyColor: AppColors.ink,
       displayColor: AppColors.ink,
     );
+    final display = GoogleFonts.baloo2TextTheme();
 
     final colorScheme = ColorScheme(
       brightness: Brightness.light,
-      primary: AppColors.primary,
-      onPrimary: AppColors.onPrimary,
-      secondary: AppColors.coralDark,
+      primary: AppColors.lavenderInk,
+      onPrimary: AppColors.white,
+      secondary: AppColors.peachInk,
       onSecondary: AppColors.white,
       error: AppColors.error,
       onError: AppColors.white,
-      surface: AppColors.white,
+      surface: AppColors.card,
       onSurface: AppColors.ink,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.bg,
-      fontFamily: GoogleFonts.poppins().fontFamily,
-      textTheme: textTheme.copyWith(
-        headlineLarge: textTheme.headlineLarge?.copyWith(
+      scaffoldBackgroundColor: AppColors.cream,
+      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+      textTheme: body.copyWith(
+        headlineLarge: display.headlineLarge?.copyWith(
           fontWeight: FontWeight.w800,
           color: AppColors.ink,
         ),
-        headlineMedium: textTheme.headlineMedium?.copyWith(
+        headlineMedium: display.headlineMedium?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
-        titleLarge: textTheme.titleLarge?.copyWith(
+        titleLarge: body.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
-        bodyMedium: textTheme.bodyMedium?.copyWith(color: AppColors.mid),
-        bodySmall: textTheme.bodySmall?.copyWith(color: AppColors.light),
-        labelLarge: textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+        bodyMedium: body.bodyMedium?.copyWith(color: AppColors.inkSoft),
+        bodySmall: body.bodySmall?.copyWith(color: AppColors.inkSoft),
+        labelLarge: body.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.greenDark,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.ink,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          color: AppColors.white,
-          letterSpacing: 0.5,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: GoogleFonts.beVietnamPro(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink,
         ),
-        iconTheme: const IconThemeData(color: AppColors.white),
+        iconTheme: const IconThemeData(color: AppColors.ink),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.white,
+        color: AppColors.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.greenDark,
-        selectedItemColor: AppColors.white,
-        unselectedItemColor: Color(0x80FFFFFF),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.card,
+        selectedItemColor: AppColors.lavenderInk,
+        unselectedItemColor: AppColors.inkSoft,
         elevation: 0,
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: TextStyle(
+        selectedLabelStyle: GoogleFonts.beVietnamPro(
           fontWeight: FontWeight.w700,
-          fontSize: 10,
+          fontSize: 11,
         ),
-        unselectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.w400,
-          fontSize: 10,
+        unselectedLabelStyle: GoogleFonts.beVietnamPro(
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.white,
-        hintStyle: GoogleFonts.poppins(
-          color: AppColors.light,
+        fillColor: AppColors.card,
+        hintStyle: GoogleFonts.beVietnamPro(
+          color: AppColors.inkSoft,
           fontSize: 13,
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -94,47 +93,47 @@ abstract final class AppTheme {
           vertical: 13,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: const BorderSide(color: AppColors.greenMid, width: 1.5),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.lavender, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.greenDark,
-          foregroundColor: AppColors.white,
+          backgroundColor: AppColors.lavender,
+          foregroundColor: AppColors.lavenderInk,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
+            borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: GoogleFonts.beVietnamPro(
             fontWeight: FontWeight.w700,
-            fontSize: 13,
+            fontSize: 14,
           ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.coralDark,
-          foregroundColor: AppColors.white,
+          backgroundColor: AppColors.lavender,
+          foregroundColor: AppColors.lavenderInk,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+            borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: GoogleFonts.beVietnamPro(
             fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
@@ -142,56 +141,56 @@ abstract final class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.greenDark,
-          textStyle: GoogleFonts.poppins(
+          foregroundColor: AppColors.lavenderInk,
+          textStyle: GoogleFonts.beVietnamPro(
             fontWeight: FontWeight.w600,
-            fontSize: 12,
+            fontSize: 13,
           ),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: AppColors.border,
+        color: AppColors.line,
         thickness: 1,
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.greenDark,
-        linearTrackColor: AppColors.border,
+        color: AppColors.lavenderInk,
+        linearTrackColor: AppColors.line,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.greenDark,
-        contentTextStyle: GoogleFonts.poppins(
+        backgroundColor: AppColors.ink,
+        contentTextStyle: GoogleFonts.beVietnamPro(
           color: AppColors.white,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
         ),
         behavior: SnackBarBehavior.floating,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.card,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
         ),
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.beVietnamPro(
           fontWeight: FontWeight.w700,
           fontSize: 16,
           color: AppColors.ink,
         ),
-        contentTextStyle: GoogleFonts.poppins(
+        contentTextStyle: GoogleFonts.beVietnamPro(
           fontSize: 13,
-          color: AppColors.mid,
+          color: AppColors.inkSoft,
         ),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.greenDark;
+            return AppColors.lavenderInk;
           }
-          return AppColors.surface;
+          return AppColors.cream;
         }),
-        side: const BorderSide(color: AppColors.border, width: 1.5),
+        side: const BorderSide(color: AppColors.line, width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
         ),
@@ -200,9 +199,9 @@ abstract final class AppTheme {
         thumbColor: WidgetStateProperty.all(AppColors.white),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.greenDark;
+            return AppColors.lavender;
           }
-          return AppColors.border;
+          return AppColors.line;
         }),
       ),
     );

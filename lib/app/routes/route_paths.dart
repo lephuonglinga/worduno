@@ -1,6 +1,12 @@
 enum AppTab {
   home,
+  study,
   dashboard,
+  profile,
+}
+
+enum ProfileSection {
+  hub,
   examHistory,
   coachHistory,
 }
@@ -8,6 +14,10 @@ enum AppTab {
 class HomeRoutePaths {
   HomeRoutePaths._();
 
+  /// Home tab root (gateway).
+  static const home = '/home';
+
+  /// Study tab root + nested learning routes.
   static const levelList = '/';
   static const unitList = '/units';
   static const termList = '/terms';
@@ -57,37 +67,52 @@ class AppRoutePath {
   const AppRoutePath({
     required this.tab,
     required this.homeStack,
+    required this.studyStack,
     required this.coachStack,
+    this.profileSection = ProfileSection.hub,
     this.examDetailId,
   });
 
   factory AppRoutePath.initial() {
-    return AppRoutePath(
+    return const AppRoutePath(
       tab: AppTab.home,
-      homeStack: [HomeStackEntry(HomeRoutePaths.levelList, const {})],
-      coachStack: [CoachStackEntry(CoachRoutePaths.list, const {})],
+      homeStack: [HomeStackEntry(HomeRoutePaths.home, {})],
+      studyStack: [HomeStackEntry(HomeRoutePaths.levelList, {})],
+      coachStack: [CoachStackEntry(CoachRoutePaths.list, {})],
     );
   }
 
   final AppTab tab;
   final List<HomeStackEntry> homeStack;
+  final List<HomeStackEntry> studyStack;
   final List<CoachStackEntry> coachStack;
+  final ProfileSection profileSection;
   final String? examDetailId;
 
   AppRoutePath copyWith({
     AppTab? tab,
     List<HomeStackEntry>? homeStack,
+    List<HomeStackEntry>? studyStack,
     List<CoachStackEntry>? coachStack,
+    ProfileSection? profileSection,
     String? examDetailId,
     bool clearExamDetail = false,
     bool clearCoachStack = false,
+    bool resetHomeStack = false,
+    bool resetStudyStack = false,
   }) {
     return AppRoutePath(
       tab: tab ?? this.tab,
-      homeStack: homeStack ?? this.homeStack,
+      homeStack: resetHomeStack
+          ? const [HomeStackEntry(HomeRoutePaths.home, {})]
+          : homeStack ?? this.homeStack,
+      studyStack: resetStudyStack
+          ? const [HomeStackEntry(HomeRoutePaths.levelList, {})]
+          : studyStack ?? this.studyStack,
       coachStack: clearCoachStack
-          ? [CoachStackEntry(CoachRoutePaths.list, const {})]
+          ? const [CoachStackEntry(CoachRoutePaths.list, {})]
           : coachStack ?? this.coachStack,
+      profileSection: profileSection ?? this.profileSection,
       examDetailId:
           clearExamDetail ? null : examDetailId ?? this.examDetailId,
     );

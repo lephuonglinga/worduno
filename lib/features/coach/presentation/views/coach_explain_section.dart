@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../domain/entities/coach_entities.dart';
 
 class CoachExplainSection extends StatelessWidget {
@@ -20,7 +21,7 @@ class CoachExplainSection extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.lightbulb_outline, color: AppColors.greenMid),
+              Icon(Icons.lightbulb_outline, color: FeatureSignatures.coachInk),
               SizedBox(width: 8),
               Text(
                 'How to use this word',
@@ -97,10 +98,10 @@ class CoachExplainSection extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.beigeLight,
+                    color: FeatureSignatures.coachBg.withValues(alpha: 0.35),
                     borderRadius:
                         BorderRadius.circular(AppDecorations.radiusSm),
-                    border: Border.all(color: AppColors.green),
+                    border: Border.all(color: FeatureSignatures.coachBg),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

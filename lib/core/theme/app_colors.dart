@@ -1,55 +1,74 @@
 import 'package:flutter/material.dart';
 
-/// Lexia design palette — flat colors from lexia-preview.
+/// Lexia pastel design palette — flat semantic colors (no gradients).
 abstract final class AppColors {
-  static const bg = Color(0xFFEAEAEA);
-  static const white = Color(0xFFFFFFFF);
-  static const greenDark = Color(0xFF1A433D);
-  static const greenMid = Color(0xFF557E7A);
-  static const green = Color(0xFFB8D4CF);
-  static const coralDark = Color(0xFFE06B45);
-  static const coralMid = Color(0xFFF48C62);
-  static const coral = Color(0xFFFFBF9A);
-  static const beige = Color(0xFFFFD9C2);
-  static const beigeLight = Color(0xFFFFF2EA);
-  static const blue = Color(0xFFC5DDD9);
-  static const purple = Color(0xFFD4E4E1);
-  static const ink = Color(0xFF1A433D);
-  static const mid = Color(0xFF557E7A);
-  static const light = Color(0xFF9AB2AE);
-  static const border = Color(0xFFD4D4D4);
-  static const surface = Color(0xFFF4F4F4);
+  // Brand / semantic blocks
+  static const lavender = Color(0xFFC9BFFA);
+  static const lavenderInk = Color(0xFF5B4FDB);
+  static const mint = Color(0xFFB8F1D9);
+  static const mintInk = Color(0xFF1F8F63);
+  static const peach = Color(0xFFFFD3B0);
+  static const peachInk = Color(0xFFC5670E);
+  static const pink = Color(0xFFFCC9DD);
+  static const pinkInk = Color(0xFFD93C82);
+  static const sun = Color(0xFFFFE9A8);
+  static const sunInk = Color(0xFF9A7400);
 
-  // Semantic aliases
-  static const primary = greenDark;
+  static const cream = Color(0xFFFDF8F0);
+  static const card = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF2B2640);
+  static const inkSoft = Color(0xFF79738F);
+  static const line = Color(0x172B2640); // ~9% ink
+
+  // Legacy aliases (mapped to new palette so existing screens pick up style)
+  static const bg = cream;
+  static const white = card;
+  static const greenDark = lavenderInk;
+  static const greenMid = mintInk;
+  static const green = mint;
+  static const coralDark = peachInk;
+  static const coralMid = peachInk;
+  static const coral = peach;
+  static const beige = peach;
+  static const beigeLight = Color(0xFFFFF0E6);
+  static const blue = Color(0xFFBEE3F8);
+  static const purple = pink;
+  static const mid = inkSoft;
+  static const light = inkSoft;
+  static const border = line;
+  static const surface = cream;
+
+  static const primary = lavenderInk;
   static const onPrimary = white;
-  static const secondary = coralDark;
-  static const error = coralDark;
-  static const errorBg = beigeLight;
-  static const errorBorder = coral;
-  static const success = greenDark;
-  static const successBg = green;
-  static const warning = coralMid;
-  static const warningBg = beigeLight;
+  static const secondary = peachInk;
+  static const error = pinkInk;
+  static const errorBg = Color(0xFFFFEEF4);
+  static const errorBorder = pink;
+  static const success = mintInk;
+  static const successBg = mint;
+  static const warning = peachInk;
+  static const warningBg = peach;
 
   static Color withAlpha27(Color color) => color.withValues(alpha: 0.27);
   static Color withAlpha33(Color color) => color.withValues(alpha: 0.2);
   static Color withAlpha55(Color color) => color.withValues(alpha: 0.33);
 
   static const levelPalettes = <LevelPalette>[
-    LevelPalette(bg: green, accent: greenDark),
-    LevelPalette(bg: beigeLight, accent: coralDark),
-    LevelPalette(bg: blue, accent: greenMid),
-    LevelPalette(bg: green, accent: greenMid),
+    LevelPalette(bg: Color(0xFFBEE3F8), accent: Color(0xFF2B6CB0)),
+    LevelPalette(bg: Color(0xFFFFC9C9), accent: Color(0xFFC53030)),
+    LevelPalette(bg: Color(0xFFD9F2C4), accent: Color(0xFF2F855A)),
+    LevelPalette(bg: Color(0xFFE7C1F9), accent: Color(0xFF6B46C1)),
+    LevelPalette(bg: Color(0xFFFFF0A3), accent: sunInk),
+    LevelPalette(bg: Color(0xFFB6ECE3), accent: mintInk),
   ];
 
   static const unitPalettes = <UnitPalette>[
-    UnitPalette(bg: green, accent: greenDark),
-    UnitPalette(bg: beigeLight, accent: coralDark),
-    UnitPalette(bg: coral, accent: coralMid),
-    UnitPalette(bg: blue, accent: greenMid),
-    UnitPalette(bg: green, accent: greenMid),
-    UnitPalette(bg: beigeLight, accent: coralMid),
+    UnitPalette(bg: mint, accent: mintInk),
+    UnitPalette(bg: peach, accent: peachInk),
+    UnitPalette(bg: pink, accent: pinkInk),
+    UnitPalette(bg: lavender, accent: lavenderInk),
+    UnitPalette(bg: sun, accent: sunInk),
+    UnitPalette(bg: Color(0xFFBEE3F8), accent: Color(0xFF2B6CB0)),
   ];
 
   static LevelPalette levelPalette(int index) =>
@@ -66,28 +85,45 @@ abstract final class AppColors {
     return levelPalettes[indexFromCode(code)];
   }
 
-  static int indexFromCode(String code) =>
-      code.toLowerCase().hashCode.abs();
+  static int indexFromCode(String code) => code.toLowerCase().hashCode.abs();
 
   static WordStatusPalette wordStatus(String status) {
     switch (status.toLowerCase()) {
       case 'learned':
-        return const WordStatusPalette(bg: green, fg: greenDark);
+      case 'know':
+        return const WordStatusPalette(bg: mint, fg: mintInk);
       case 'learning':
-        return const WordStatusPalette(bg: beigeLight, fg: coralMid);
+        return const WordStatusPalette(bg: peach, fg: peachInk);
       default:
-        return const WordStatusPalette(bg: blue, fg: greenMid);
+        return const WordStatusPalette(
+          bg: Color(0xFFBEE3F8),
+          fg: Color(0xFF2B6CB0),
+        );
+    }
+  }
+
+  /// Softer status fills (flashcard definition face, etc.) — easier on text.
+  static WordStatusPalette wordStatusSoft(String status) {
+    switch (status.toLowerCase()) {
+      case 'learned':
+      case 'know':
+        return const WordStatusPalette(bg: Color(0xFFE8F8F0), fg: mintInk);
+      case 'learning':
+        return const WordStatusPalette(bg: Color(0xFFFFF0E4), fg: peachInk);
+      default:
+        // Pastel blue — readable on cream app background
+        return const WordStatusPalette(bg: Color(0xFFDCEEFF), fg: Color(0xFF2B6CB0));
     }
   }
 
   static ScorePalette examScore(double score) {
     if (score >= 0.8) {
-      return const ScorePalette(bg: green, fg: greenDark);
+      return const ScorePalette(bg: mint, fg: mintInk);
     }
     if (score >= 0.6) {
-      return const ScorePalette(bg: beigeLight, fg: coralMid);
+      return const ScorePalette(bg: sun, fg: sunInk);
     }
-    return const ScorePalette(bg: coral, fg: coralDark);
+    return const ScorePalette(bg: peach, fg: peachInk);
   }
 }
 
