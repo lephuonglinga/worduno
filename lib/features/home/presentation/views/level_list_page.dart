@@ -49,12 +49,12 @@ class _LevelListPageState extends State<LevelListPage> {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.cream,
       appBar: LexiaAppBar(
         actions: [
           LexiaAppBarIconButton(
             icon: Icons.refresh_rounded,
-            tooltip: viewModel.reloadProgress ?? 'Reload vocabulary',
+            tooltip: viewModel.reloadProgress ?? 'Tải lại từ vựng',
             isLoading: viewModel.isReloading,
             onPressed: viewModel.reloadLevels,
           ),
@@ -73,41 +73,10 @@ class _LevelListPageState extends State<LevelListPage> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'GOOD MORNING',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.light,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Learner',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _StreakCard(viewModel: viewModel),
-              ],
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
             child: _SearchBar(
               controller: _searchController,
-              hint: 'Search level...',
+              hint: 'Tìm level...',
             ),
           ),
         ),
@@ -115,17 +84,12 @@ class _LevelListPageState extends State<LevelListPage> {
         if (viewModel.isReloading && viewModel.reloadProgress != null)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
               child: Container(
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius:
-                      BorderRadius.circular(AppDecorations.radiusMd),
-                  boxShadow: AppDecorations.shadowSm,
-                ),
+                decoration: AppDecorations.card(),
                 child: Row(
                   children: [
                     const SizedBox(
@@ -133,7 +97,7 @@ class _LevelListPageState extends State<LevelListPage> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.greenMid,
+                        color: AppColors.lavenderInk,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -143,7 +107,7 @@ class _LevelListPageState extends State<LevelListPage> {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.mid,
+                          color: AppColors.inkSoft,
                         ),
                       ),
                     ),
@@ -156,39 +120,14 @@ class _LevelListPageState extends State<LevelListPage> {
         if (viewModel.errorMessage != null && viewModel.levels.isNotEmpty)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
               child: AppErrorBanner(message: viewModel.errorMessage!),
             ),
           ),
 
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-            child: _CreateExamButton(
-              onTap: () => context
-                  .read<AppNavigationNotifier>()
-                  .openHomeRoute(HomeRoutePaths.examConfig),
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: const Text(
-              'Your Levels',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
-          ),
-        ),
-
         if (viewModel.isLoading && viewModel.levels.isEmpty)
           const SliverFillRemaining(
-            child: AppLoading(message: 'Loading levels...'),
+            child: AppLoading(message: 'Đang tải level...'),
           )
         else if (viewModel.errorMessage != null && viewModel.levels.isEmpty)
           SliverFillRemaining(
@@ -201,27 +140,25 @@ class _LevelListPageState extends State<LevelListPage> {
           const SliverFillRemaining(
             child: Center(
               child: Text(
-                'No levels found.',
-                style: TextStyle(color: AppColors.light),
+                'Không tìm thấy level.',
+                style: TextStyle(color: AppColors.inkSoft),
               ),
             ),
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final level = filtered[index];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: _LevelCard(
                       level: level,
                       colorIndex: index,
                       onTap: () {
-                        context
-                            .read<AppNavigationNotifier>()
-                            .openHomeRoute(
+                        context.read<AppNavigationNotifier>().openStudyRoute(
                               HomeRoutePaths.unitList,
                               params: {'level': level.code},
                             );
@@ -233,119 +170,6 @@ class _LevelListPageState extends State<LevelListPage> {
               ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _StreakCard extends StatelessWidget {
-  const _StreakCard({required this.viewModel});
-
-  final LevelListViewModel viewModel;
-
-  @override
-  Widget build(BuildContext context) {
-    final streakLabel = viewModel.currentStreak == 1
-        ? '1 day'
-        : '${viewModel.currentStreak} days';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.greenMid,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-        boxShadow: AppDecorations.shadowMd,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.local_fire_department,
-                        size: 15, color: AppColors.coral),
-                    SizedBox(width: 4),
-                    Text(
-                      'Current Streak',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  streakLabel,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _MiniStat(
-            icon: Icons.check,
-            value: '${viewModel.totalLearned}',
-            label: 'Learned',
-            color: AppColors.green,
-          ),
-          const SizedBox(width: 20),
-          _MiniStat(
-            icon: Icons.star,
-            value: '${viewModel.totalStarred}',
-            label: 'Starred',
-            color: AppColors.coral,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 3),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: AppColors.white,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: AppColors.white.withValues(alpha: 0.75),
-          ),
-        ),
       ],
     );
   }
@@ -364,59 +188,25 @@ class _SearchBar extends StatelessWidget {
       style: const TextStyle(fontSize: 14, color: AppColors.ink),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.light, fontSize: 14),
+        hintStyle: const TextStyle(color: AppColors.inkSoft, fontSize: 14),
         prefixIcon:
-            const Icon(Icons.search, color: AppColors.light, size: 20),
+            const Icon(Icons.search, color: AppColors.inkSoft, size: 20),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: AppColors.card,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
           borderSide:
-              const BorderSide(color: AppColors.greenMid, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateExamButton extends StatelessWidget {
-  const _CreateExamButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: AppDecorations.pillButton(AppColors.coralDark),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.auto_awesome, color: AppColors.white, size: 18),
-            SizedBox(width: 8),
-            Text(
-              'Create Exam',
-              style: TextStyle(
-                color: AppColors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
+              const BorderSide(color: AppColors.lavender, width: 1.5),
         ),
       ),
     );
@@ -436,11 +226,11 @@ class _LevelCard extends StatelessWidget {
 
   String _subtitle(String code) {
     final c = code.toLowerCase();
-    if (c.contains('a1')) return 'Beginner';
-    if (c.contains('a2')) return 'Elementary';
-    if (c.contains('b1')) return 'Intermediate';
-    if (c.contains('b2')) return 'Upper Intermediate';
-    if (c.contains('c')) return 'Advanced';
+    if (c.contains('a1')) return 'Sơ cấp';
+    if (c.contains('a2')) return 'Cơ bản';
+    if (c.contains('b1')) return 'Trung cấp';
+    if (c.contains('b2')) return 'Trung cấp cao';
+    if (c.contains('c')) return 'Nâng cao';
     return '';
   }
 
@@ -454,138 +244,63 @@ class _LevelCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.withAlpha33(pal.bg),
-          borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
-          border: Border.all(color: pal.accent),
+          color: pal.bg,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+          boxShadow: AppDecorations.shadowMd,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        level.code.toUpperCase().replaceAll('&', ' & '),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      if (subtitle.isNotEmpty)
-                        Text(
-                          subtitle,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mid,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: pal.bg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '$pct%',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: pal.accent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: level.progress,
-                minHeight: 6,
-                backgroundColor: AppColors.white.withValues(alpha: 0.7),
-                valueColor: AlwaysStoppedAnimation<Color>(pal.accent),
+            Text(
+              level.code.toUpperCase().replaceAll('&', ' & '),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
               ),
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _StatCol(
-                  icon: Icons.check,
-                  iconColor: pal.accent,
-                  value: '${level.knownTerms}',
-                  label: 'Learned',
+            if (subtitle.isNotEmpty)
+              Text(
+                '$subtitle · ${level.totalTerms} từ · $pct% đã thuộc',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ink.withValues(alpha: 0.75),
                 ),
-                const SizedBox(width: 22),
-                _StatCol(
-                  icon: Icons.crop_square_outlined,
-                  iconColor: AppColors.light,
-                  value: '$left',
-                  label: 'Left',
+              )
+            else
+              Text(
+                '${level.totalTerms} từ · $pct% đã thuộc',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ink.withValues(alpha: 0.75),
                 ),
-                const SizedBox(width: 22),
-                _StatCol(
-                  icon: Icons.library_books_outlined,
-                  iconColor: AppColors.light,
-                  value: '${level.totalTerms}',
-                  label: 'Total',
+              ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
+              child: LinearProgressIndicator(
+                value: level.progress,
+                minHeight: 9,
+                backgroundColor: Colors.white.withValues(alpha: 0.55),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.ink.withValues(alpha: 0.55),
                 ),
-              ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${level.knownTerms} đã thuộc · $left còn lại',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink.withValues(alpha: 0.7),
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _StatCol extends StatelessWidget {
-  const _StatCol({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 13, color: iconColor),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: AppColors.light),
-        ),
-      ],
     );
   }
 }

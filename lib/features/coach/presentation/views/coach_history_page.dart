@@ -5,6 +5,7 @@ import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../app/routes/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_navigation_widgets.dart';
@@ -36,7 +37,9 @@ class _CoachHistoryPageState extends State<CoachHistoryPage> {
   void _onNavigationChanged() {
     final config = _navigationNotifier?.configuration;
     if (config == null) return;
-    if (config.tab == AppTab.coachHistory && config.coachStack.length == 1) {
+    if (config.tab == AppTab.profile &&
+        config.profileSection == ProfileSection.coachHistory &&
+        config.coachStack.length == 1) {
       _viewModel.loadTerms();
     }
   }
@@ -59,8 +62,12 @@ class _CoachHistoryPageState extends State<CoachHistoryPage> {
               vm.terms.isNotEmpty;
 
           return Scaffold(
-            backgroundColor: AppColors.bg,
-            appBar: const WordunoAppBar(title: 'AI History', showBack: false),
+            backgroundColor: AppColors.cream,
+            appBar: WordunoAppBar(
+              title: 'Lịch sử AI Coach',
+              onBack: () =>
+                  context.read<AppNavigationNotifier>().popProfileToHub(),
+            ),
             floatingActionButton: showFab
                 ? FloatingActionButton.extended(
                     onPressed: () {
@@ -68,11 +75,11 @@ class _CoachHistoryPageState extends State<CoachHistoryPage> {
                           .read<AppNavigationNotifier>()
                           .startCoachFromHistory();
                     },
-                    backgroundColor: AppColors.coralDark,
-                    foregroundColor: AppColors.white,
-                    icon: const Icon(Icons.play_arrow_rounded),
+                    backgroundColor: FeatureSignatures.coachBg,
+                    foregroundColor: FeatureSignatures.coachInk,
+                    icon: const Icon(FeatureSignatures.coachIcon),
                     label: const Text(
-                      'Start Coach',
+                      'Bắt đầu Coach',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                   )
@@ -103,7 +110,7 @@ class _CoachHistoryPageState extends State<CoachHistoryPage> {
     }
     return RefreshIndicator(
       onRefresh: vm.loadTerms,
-      color: AppColors.greenDark,
+      color: FeatureSignatures.coachInk,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 88),
         itemCount: vm.terms.length,
@@ -175,18 +182,18 @@ class _EmptyHistory extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.beigeLight,
-                borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                color: FeatureSignatures.coachBg,
+                borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
               ),
               child: const Icon(
-                Icons.smart_toy_outlined,
+                FeatureSignatures.coachIcon,
                 size: 36,
-                color: AppColors.greenMid,
+                color: FeatureSignatures.coachInk,
               ),
             ),
             const SizedBox(height: 20),
             const Text(
-              'No coach history yet',
+              'Chưa có lịch sử AI Coach',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -195,11 +202,11 @@ class _EmptyHistory extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Coached words appear here with level and unit. Each term is tracked separately.',
+              'Các từ đã luyện sẽ hiện ở đây theo Level và Unit.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.mid,
+                color: AppColors.inkSoft,
                 height: 1.45,
               ),
             ),
@@ -209,17 +216,17 @@ class _EmptyHistory extends StatelessWidget {
               height: 52,
               child: FilledButton.icon(
                 onPressed: onStart,
-                icon: const Icon(Icons.play_arrow_rounded),
+                icon: const Icon(FeatureSignatures.coachIcon),
                 label: const Text(
-                  'Start Coach',
+                  'Bắt đầu Coach',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.coralDark,
-                  foregroundColor: AppColors.white,
+                  backgroundColor: FeatureSignatures.coachBg,
+                  foregroundColor: FeatureSignatures.coachInk,
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(AppDecorations.radiusSm),
+                        BorderRadius.circular(AppDecorations.radiusBtn),
                   ),
                 ),
               ),
@@ -272,7 +279,7 @@ class _TermCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.greenMid,
+                        color: FeatureSignatures.coachInk,
                       ),
                     ),
                     const SizedBox(height: 4),

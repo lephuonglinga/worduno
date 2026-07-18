@@ -6,10 +6,12 @@ import '../../features/dashboard/presentation/viewmodels/dashboard_view_model.da
 import '../../features/dashboard/presentation/views/dashboard_page.dart';
 import '../../features/exam/presentation/views/exam_pages.dart';
 import '../../features/home/presentation/viewmodels/level_list_view_model.dart';
+import '../../features/home/presentation/views/home_page.dart';
 import '../../features/home/presentation/views/level_list_page.dart';
 import '../../features/home/presentation/views/term_list_page.dart';
 import '../../features/home/presentation/views/unit_list_page.dart';
 import '../../features/learning/presentation/views/learn_session_page.dart';
+import '../../features/profile/presentation/views/profile_hub_page.dart';
 import '../navigation/app_navigation_notifier.dart';
 import '../shell/app_shell.dart';
 import 'route_paths.dart';
@@ -51,12 +53,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
         if (!route.didPop(result)) {
           return false;
         }
-        return switch (_navigationNotifier.configuration.tab) {
-          AppTab.home => _navigationNotifier.popHomeRoute(),
-          AppTab.examHistory => _navigationNotifier.popExamDetail(),
-          AppTab.coachHistory => _navigationNotifier.popCoachRoute(),
-          AppTab.dashboard => false,
-        };
+        return _navigationNotifier.popActive();
       },
     );
   }
@@ -68,42 +65,47 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
 
   @override
   Future<bool> popRoute() async {
-    return switch (_navigationNotifier.configuration.tab) {
-      AppTab.home => _navigationNotifier.popHomeRoute(),
-      AppTab.examHistory => _navigationNotifier.popExamDetail(),
-      AppTab.coachHistory => _navigationNotifier.popCoachRoute(),
-      AppTab.dashboard => false,
-    };
+    return _navigationNotifier.popActive();
   }
 
   Widget _buildTabNavigator(AppRoutePath configuration) {
     return switch (configuration.tab) {
-      AppTab.home => _buildHomeNavigator(configuration.homeStack),
+      AppTab.home => _buildStackNavigator(
+          configuration.homeStack,
+          onPop: _navigationNotifier.popHomeRoute,
+        ),
+      AppTab.study => _buildStackNavigator(
+          configuration.studyStack,
+          onPop: _navigationNotifier.popStudyRoute,
+        ),
       AppTab.dashboard => ChangeNotifierProvider(
           create: (_) => DashboardViewModel(),
           child: const DashboardPage(),
         ),
-      AppTab.examHistory => _buildExamHistoryNavigator(configuration),
-      AppTab.coachHistory => _buildCoachHistoryNavigator(configuration),
+      AppTab.profile => _buildProfileNavigator(configuration),
     };
   }
 
-  Widget _buildHomeNavigator(List<HomeStackEntry> stack) {
+  Widget _buildStackNavigator(
+    List<HomeStackEntry> stack, {
+    required bool Function() onPop,
+  }) {
     return Navigator(
       pages: [
-        for (final entry in stack) _buildHomePage(entry),
+        for (final entry in stack) _buildStackPage(entry),
       ],
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
           return false;
         }
-        return _navigationNotifier.popHomeRoute();
+        return onPop();
       },
     );
   }
 
-  Page<void> _buildHomePage(HomeStackEntry entry) {
+  Page<void> _buildStackPage(HomeStackEntry entry) {
     final child = switch (entry.path) {
+      HomeRoutePaths.home => const HomePage(),
       HomeRoutePaths.levelList => ChangeNotifierProvider(
           create: (_) => LevelListViewModel(),
           child: const LevelListPage(),
@@ -132,10 +134,11 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
       HomeRoutePaths.coachConfig => CoachConfigPage(
           levelCode: entry.params['level'],
           unitName: entry.params['unit'],
+          unitId: entry.params['unitId'],
         ),
       HomeRoutePaths.coachSession => const CoachSessionPage(),
       _ => const Scaffold(
-          body: Center(child: Text('Unknown home route')),
+          body: Center(child: Text('Không tìm thấy trang')),
         ),
     };
 
@@ -145,41 +148,52 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     );
   }
 
-  Widget _buildExamHistoryNavigator(AppRoutePath configuration) {
-    return Navigator(
-      pages: [
-        const MaterialPage<void>(
-          key: ValueKey('exam-history-list'),
-          child: ExamHistoryPage(),
+  Widget _buildProfileNavigator(AppRoutePath configuration) {
+    return switch (configuration.profileSection) {
+      ProfileSection.hub => Navigator(
+          pages: const [
+            MaterialPage<void>(
+              key: ValueKey('profile-hub'),
+              child: ProfileHubPage(),
+            ),
+          ],
+          onPopPage: (route, result) => false,
         ),
-        if (configuration.examDetailId != null)
-          MaterialPage<void>(
-            key: ValueKey('exam-detail-${configuration.examDetailId}'),
-            child: ExamDetailPage(examId: configuration.examDetailId!),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
-        }
-        return _navigationNotifier.popExamDetail();
-      },
-    );
-  }
-
-  Widget _buildCoachHistoryNavigator(AppRoutePath configuration) {
-    return Navigator(
-      pages: [
-        for (final entry in configuration.coachStack)
-          _buildCoachHistoryPage(entry),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
-        }
-        return _navigationNotifier.popCoachRoute();
-      },
-    );
+      ProfileSection.examHistory => Navigator(
+          pages: [
+            const MaterialPage<void>(
+              key: ValueKey('exam-history-list'),
+              child: ExamHistoryPage(),
+            ),
+            if (configuration.examDetailId != null)
+              MaterialPage<void>(
+                key: ValueKey('exam-detail-${configuration.examDetailId}'),
+                child: ExamDetailPage(examId: configuration.examDetailId!),
+              ),
+          ],
+          onPopPage: (route, result) {
+            if (!route.didPop(result)) {
+              return false;
+            }
+            if (configuration.examDetailId != null) {
+              return _navigationNotifier.popExamDetail();
+            }
+            return _navigationNotifier.popProfileToHub();
+          },
+        ),
+      ProfileSection.coachHistory => Navigator(
+          pages: [
+            for (final entry in configuration.coachStack)
+              _buildCoachHistoryPage(entry),
+          ],
+          onPopPage: (route, result) {
+            if (!route.didPop(result)) {
+              return false;
+            }
+            return _navigationNotifier.popCoachRoute();
+          },
+        ),
+    };
   }
 
   Page<void> _buildCoachHistoryPage(CoachStackEntry entry) {
@@ -199,7 +213,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
         ),
       CoachRoutePaths.session => const CoachSessionPage(),
       _ => const Scaffold(
-          body: Center(child: Text('Unknown coach route')),
+          body: Center(child: Text('Không tìm thấy trang')),
         ),
     };
 

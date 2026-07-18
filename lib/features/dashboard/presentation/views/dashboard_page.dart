@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../app/navigation/app_navigation_notifier.dart';
-import '../../../../app/routes/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../viewmodels/dashboard_view_model.dart';
@@ -31,20 +31,20 @@ class _DashboardPageState extends State<DashboardPage> {
     final viewModel = context.watch<DashboardViewModel>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
-        backgroundColor: AppColors.greenDark,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.ink,
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
+        surfaceTintColor: Colors.transparent,
         title: const Text(
-          'Lexia',
+          'Thống kê',
           style: TextStyle(
-            color: AppColors.white,
+            color: AppColors.ink,
             fontWeight: FontWeight.w800,
-            fontSize: 16,
-            letterSpacing: 0.5,
+            fontSize: 18,
           ),
         ),
       ),
@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBody(BuildContext context, DashboardViewModel viewModel) {
     if (viewModel.isLoading && viewModel.data == null) {
-      return const AppLoading(message: 'Loading stats...');
+              return const AppLoading(message: 'Đang tải thống kê...');
     }
 
     if (viewModel.errorMessage != null) {
@@ -66,7 +66,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final data = viewModel.data;
     if (data == null) {
-      return const Center(child: Text('No stats available.'));
+      return const Center(child: Text('Chưa có thống kê.'));
     }
 
     return RefreshIndicator(
@@ -77,27 +77,6 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Title row
-            Row(
-              children: [
-                const Text(
-                  'Dashboard',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.bar_chart_rounded,
-                  color: AppColors.greenDark,
-                  size: 24,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
             // OVERALL PROGRESS CARD
             _OverallProgressCard(
               progress: data.overallProgress,
@@ -111,31 +90,31 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Expanded(
                   child: _MiniStatCard(
-                    icon: Icons.check_circle_rounded,
-                    cardBg: AppColors.green,
-                    iconColor: AppColors.greenDark,
+                    icon: Icons.check_circle_outline,
+                    cardBg: AppColors.mint,
+                    iconColor: AppColors.mintInk,
                     value: '${data.learnedWordsCount}',
-                    label: 'learned',
+                    label: 'đã thuộc',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _MiniStatCard(
-                    icon: Icons.auto_stories_rounded,
-                    cardBg: AppColors.beigeLight,
-                    iconColor: AppColors.coralMid,
+                    icon: Icons.auto_stories_outlined,
+                    cardBg: AppColors.peach,
+                    iconColor: AppColors.peachInk,
                     value: '${data.learningWordsCount}',
-                    label: 'learning',
+                    label: 'đang học',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _MiniStatCard(
-                    icon: Icons.star_rounded,
-                    cardBg: AppColors.coral,
-                    iconColor: AppColors.coralDark,
+                    icon: Icons.star_outline_rounded,
+                    cardBg: AppColors.sun,
+                    iconColor: AppColors.sunInk,
                     value: '${data.starredWordsCount}',
-                    label: 'starred',
+                    label: 'yêu thích',
                   ),
                 ),
               ],
@@ -147,21 +126,21 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Expanded(
                   child: _ExamStatCard(
-                    icon: Icons.description_rounded,
-                    iconColor: AppColors.greenMid,
+                    icon: FeatureSignatures.examIcon,
+                    iconColor: FeatureSignatures.examInk,
                     value: '${data.examCount}',
-                    label: 'exam count',
-                    cardBg: AppColors.blue,
+                    label: 'số bài thi',
+                    cardBg: FeatureSignatures.examBg,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ExamStatCard(
-                    icon: Icons.bookmark_added_rounded,
-                    iconColor: AppColors.greenDark,
+                    icon: Icons.bookmark_added_outlined,
+                    iconColor: AppColors.lavenderInk,
                     value: '${(data.averageExamScore * 100).round()}%',
-                    label: 'avg exam score',
-                    cardBg: AppColors.green,
+                    label: 'điểm TB',
+                    cardBg: AppColors.lavender,
                   ),
                 ),
               ],
@@ -170,17 +149,21 @@ class _DashboardPageState extends State<DashboardPage> {
 
             // LEVEL PROGRESS SECTION
             _SectionHeader(
-              title: 'Level Progress',
+              title: 'Tiến độ theo Level',
               icon: Icons.explore_outlined,
             ),
             const SizedBox(height: 10),
             Column(
-              children: data.levelProgressList.map((level) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _LevelProgressRowCard(level: level),
-                );
-              }).toList(),
+              children: [
+                for (var i = 0; i < data.levelProgressList.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _LevelProgressRowCard(
+                      level: data.levelProgressList[i],
+                      colorIndex: i,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
 
@@ -190,18 +173,20 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Expanded(
                   child: _StrengthWeaknessCol(
-                    title: 'Strongest',
+                    title: 'Unit mạnh nhất',
                     icon: Icons.emoji_events_outlined,
-                    iconColor: AppColors.greenDark,
+                    iconColor: FeatureSignatures.learnInk,
+                    blobBg: FeatureSignatures.learnBg,
                     units: data.strongestUnits,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StrengthWeaknessCol(
-                    title: 'Weakest',
-                    icon: Icons.error_outline_rounded,
-                    iconColor: AppColors.coralDark,
+                    title: 'Cần cải thiện',
+                    icon: FeatureSignatures.examIcon,
+                    iconColor: FeatureSignatures.examInk,
+                    blobBg: FeatureSignatures.examBg,
                     units: data.weakestUnits,
                   ),
                 ),
@@ -211,17 +196,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
             // RECENT EXAMS FEED
             _SectionHeader(
-              title: 'Recent Exams',
-              icon: Icons.history_rounded,
+              title: 'Bài kiểm tra gần đây',
+              icon: FeatureSignatures.examIcon,
               trailing: _ViewAllButton(
-                onTap: () => context.read<AppNavigationNotifier>().selectTab(
-                  AppTab.examHistory,
-                ),
+                onTap: () => context
+                    .read<AppNavigationNotifier>()
+                    .openProfileExamHistory(),
               ),
             ),
             const SizedBox(height: 10),
             if (data.recentExams.isEmpty)
-              const _EmptyStateView(message: 'No exams taken yet.')
+              const _EmptyStateView(message: 'Chưa làm bài kiểm tra nào.')
             else
               Column(
                 children: data.recentExams.map((exam) {
@@ -235,17 +220,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
             // RECENT AI COACH FEED
             _SectionHeader(
-              title: 'Recent AI Coach',
-              icon: Icons.smart_toy_outlined,
+              title: 'AI Coach gần đây',
+              icon: FeatureSignatures.coachIcon,
               trailing: _ViewAllButton(
-                onTap: () => context.read<AppNavigationNotifier>().selectTab(
-                  AppTab.coachHistory,
-                ),
+                onTap: () => context
+                    .read<AppNavigationNotifier>()
+                    .openProfileCoachHistory(),
               ),
             ),
             const SizedBox(height: 10),
             if (data.recentCoachFeedback.isEmpty)
-              const _EmptyStateView(message: 'No AI Coach chats yet.')
+              const _EmptyStateView(message: 'Chưa có luyện AI Coach.')
             else
               Column(
                 children: data.recentCoachFeedback.map((coach) {
@@ -282,7 +267,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.mid),
+        Icon(icon, size: 18, color: AppColors.lavenderInk),
         const SizedBox(width: 6),
         Text(
           title,
@@ -315,18 +300,18 @@ class _ViewAllButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'View all',
+              'Xem tất cả',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.greenDark,
+                color: AppColors.lavenderInk,
               ),
             ),
             SizedBox(width: 2),
             Icon(
               Icons.chevron_right_rounded,
               size: 14,
-              color: AppColors.greenDark,
+              color: AppColors.lavenderInk,
             ),
           ],
         ),
@@ -346,13 +331,13 @@ class _EmptyStateView extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
       ),
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(color: AppColors.light, fontSize: 13),
+          style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
         ),
       ),
     );
@@ -380,92 +365,61 @@ class _OverallProgressCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.beigeLight,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
-        boxShadow: AppDecorations.shadowSm,
-      ),
+      decoration: AppDecorations.card(),
       child: Row(
         children: [
-          // Circular Arc Canvas
-          SizedBox(
-            width: 80,
-            height: 80,
-            child: CustomPaint(
-              painter: CircularProgressPainter(
-                progress: progress,
-                strokeWidth: 8,
-                color: AppColors.greenDark,
-                backgroundColor: AppColors.border,
-              ),
-              child: Center(
-                child: Text(
-                  '$percentage%',
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                  ),
-                ),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              color: AppColors.sun,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(22),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(24),
               ),
             ),
+            child: const Icon(
+              Icons.emoji_events_outlined,
+              color: AppColors.sunInk,
+              size: 26,
+            ),
           ),
-          const SizedBox(width: 18),
-
-          // Details side
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'OVERALL PROGRESS',
-                  style: TextStyle(
-                    fontSize: 10,
+                Text(
+                  '$learned / $total từ',
+                  style: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.light,
-                    letterSpacing: 1.0,
+                    color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '$learned',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    Text(
-                      ' / $total',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.light,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                // Tiny linear progress below numbers
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 5,
-                    backgroundColor: AppColors.surface,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.greenDark,
-                    ),
+                Text(
+                  '$percentage% tổng tiến độ',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.inkSoft,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'words learned across all levels',
-                  style: TextStyle(fontSize: 11, color: AppColors.mid),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(AppDecorations.radiusPill),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 9,
+                    backgroundColor: AppColors.line,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.lavenderInk,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -550,7 +504,7 @@ class _MiniStatCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
       ),
       child: Column(
         children: [
@@ -603,11 +557,24 @@ class _ExamStatCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: iconColor),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.45),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(18),
+              ),
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -623,10 +590,10 @@ class _ExamStatCard extends StatelessWidget {
                 ),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.mid,
+                    color: iconColor,
                   ),
                 ),
               ],
@@ -643,19 +610,26 @@ class _ExamStatCard extends StatelessWidget {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _LevelProgressRowCard extends StatelessWidget {
-  const _LevelProgressRowCard({required this.level});
+  const _LevelProgressRowCard({
+    required this.level,
+    required this.colorIndex,
+  });
 
   final LevelProgressData level;
+  final int colorIndex;
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppColors.levelPaletteForCode(level.levelCode);
-    final barColor = palette.accent;
+    final palette = AppColors.levelPalette(colorIndex);
     final percentage = (level.progress * 100).round();
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.card(),
+      decoration: BoxDecoration(
+        color: palette.bg,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+        boxShadow: AppDecorations.shadowMd,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -665,47 +639,51 @@ class _LevelProgressRowCard extends StatelessWidget {
                 level.levelCode.toUpperCase().replaceAll('&', ' & '),
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.ink,
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                level.levelName,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.mid,
+              Expanded(
+                child: Text(
+                  level.levelName,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.ink.withValues(alpha: 0.7),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
               Text(
                 '$percentage%',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: barColor,
+                  color: AppColors.ink,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
             child: LinearProgressIndicator(
               value: level.progress,
-              minHeight: 6,
-              backgroundColor: palette.bg,
-              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              minHeight: 9,
+              backgroundColor: Colors.white.withValues(alpha: 0.55),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.ink.withValues(alpha: 0.55),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '${level.knownTerms} / ${level.totalTerms} words',
-            style: const TextStyle(
+            '${level.knownTerms} / ${level.totalTerms} từ',
+            style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.light,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -723,12 +701,14 @@ class _StrengthWeaknessCol extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.iconColor,
+    required this.blobBg,
     required this.units,
   });
 
   final String title;
   final IconData icon;
   final Color iconColor;
+  final Color blobBg;
   final List<UnitProgressData> units;
 
   @override
@@ -741,14 +721,24 @@ class _StrengthWeaknessCol extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: blobBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 16, color: iconColor),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
                 ),
               ),
             ],
@@ -756,83 +746,42 @@ class _StrengthWeaknessCol extends StatelessWidget {
           const SizedBox(height: 12),
           if (units.isEmpty)
             const Text(
-              'No data yet',
-              style: TextStyle(fontSize: 11, color: AppColors.light),
+              'Chưa có dữ liệu',
+              style: TextStyle(fontSize: 11, color: AppColors.inkSoft),
             )
           else
-            Column(
-              children: units.map((unit) {
-                final pct = (unit.progress * 100).round();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          _UnitMiniBadge(unitId: unit.unitId),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              unit.unitName,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.mid,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            '$pct%',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ],
+            ...units.map(
+              (unit) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      unit.unitName,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          AppDecorations.radiusPill,
-                        ),
-                        child: LinearProgressIndicator(
-                          value: unit.progress,
-                          minHeight: 4,
-                          backgroundColor: AppColors.surface,
-                          valueColor: AlwaysStoppedAnimation<Color>(iconColor),
-                        ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppDecorations.radiusPill),
+                      child: LinearProgressIndicator(
+                        value: unit.progress,
+                        minHeight: 6,
+                        backgroundColor: AppColors.line,
+                        valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    ),
+                  ],
+                ),
+              ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _UnitMiniBadge extends StatelessWidget {
-  const _UnitMiniBadge({required this.unitId});
-
-  final String unitId;
-
-  @override
-  Widget build(BuildContext context) {
-    final val = int.tryParse(unitId) ?? 0;
-    final color = AppColors.unitPalette(val).accent;
-
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: 3.5),
       ),
     );
   }
@@ -857,13 +806,17 @@ class _RecentExamCard extends StatelessWidget {
       decoration: AppDecorations.card(),
       child: Row(
         children: [
-          // Score badge circle
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: scorePalette.bg,
-              shape: BoxShape.circle,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(14),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(20),
+              ),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -876,8 +829,6 @@ class _RecentExamCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-
-          // Description
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -894,10 +845,10 @@ class _RecentExamCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${exam.dateLabel} · ${exam.questionCount} questions',
+                  '${exam.dateLabel} · ${exam.questionCount} câu',
                   style: const TextStyle(
                     fontSize: 11,
-                    color: AppColors.light,
+                    color: AppColors.inkSoft,
                   ),
                 ),
               ],
@@ -924,39 +875,65 @@ class _RecentCoachCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: AppDecorations.card(),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  coach.word,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: FeatureSignatures.coachBg,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(18),
+              ),
+            ),
+            child: const Icon(
+              FeatureSignatures.coachIcon,
+              size: 18,
+              color: FeatureSignatures.coachInk,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        coach.word,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      coach.dateLabel,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.inkSoft,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _formatQuotedSentence(coach.sentence),
                   style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.inkSoft,
+                    height: 1.3,
                   ),
                 ),
-              ),
-              Text(
-                coach.dateLabel,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.light,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            _formatQuotedSentence(coach.sentence),
-            style: const TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-              color: AppColors.mid,
-              height: 1.3,
+              ],
             ),
           ),
         ],

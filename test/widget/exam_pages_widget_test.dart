@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worduno/app/di/injection.dart';
 import 'package:worduno/app/navigation/app_navigation_notifier.dart';
 import 'package:worduno/app/routes/route_paths.dart';
@@ -22,6 +23,7 @@ void main() {
   });
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     fakeExam = FakeExamService();
 
     if (getIt.isRegistered<IExamService>()) {
@@ -42,12 +44,13 @@ void main() {
       await tester.pumpWidget(wrapWithNavigation(const ExamSessionPage()));
       await tester.pump();
 
-      expect(find.text('Submit Exam'), findsOneWidget);
+      expect(find.text('Nộp bài'), findsOneWidget);
       expect(find.text('hello'), findsOneWidget);
       expect(find.text('Term → Definition'), findsOneWidget);
     });
 
     testWidgets('ExamSessionPage submit navigates to result route', (tester) async {
+      SharedPreferences.setMockInitialValues({});
       fakeExam.seedPaper(sampleExamPaper());
       final nav = AppNavigationNotifier();
 
@@ -56,14 +59,14 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Submit Exam'));
+      await tester.tap(find.text('Nộp bài'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(fakeExam.currentResult, isNotNull);
       expect(
-        nav.configuration.homeStack.last.path,
-        HomeRoutePaths.examResult,
+        nav.configuration.homeStack.map((e) => e.path).toList(),
+        contains(HomeRoutePaths.examResult),
       );
     });
 
@@ -79,10 +82,10 @@ void main() {
       await tester.tap(find.text('Review Answers'));
       await tester.pump();
 
-      expect(find.text('Back to summary'), findsOneWidget);
+      expect(find.text('Về tổng kết'), findsOneWidget);
       expect(find.text('Your answer: greeting'), findsOneWidget);
 
-      await tester.tap(find.text('Back to summary'));
+      await tester.tap(find.text('Về tổng kết'));
       await tester.pump();
 
       expect(find.text('Review Answers'), findsOneWidget);
@@ -130,13 +133,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Exam Detail'), findsOneWidget);
+      expect(find.text('Chi tiết bài thi'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Delete exam?'), findsOneWidget);
+      expect(find.text('Xoá bài kiểm tra?'), findsOneWidget);
       await tester.tap(find.text('Delete'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));

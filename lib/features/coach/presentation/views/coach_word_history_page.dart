@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_navigation_widgets.dart';
@@ -212,8 +213,8 @@ class _WordHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.beigeLight,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        color: FeatureSignatures.coachBg.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +233,7 @@ class _WordHeader extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.greenMid,
+              color: FeatureSignatures.coachInk,
             ),
           ),
           const SizedBox(height: 8),
@@ -293,7 +294,10 @@ class _FeedbackListTile extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppDecorations.radiusSm),
                         border: const Border(
-                          left: BorderSide(color: AppColors.greenMid, width: 3),
+                          left: BorderSide(
+                            color: FeatureSignatures.coachInk,
+                            width: 3,
+                          ),
                         ),
                       ),
                       child: Text(

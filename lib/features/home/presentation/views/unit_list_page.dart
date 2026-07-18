@@ -77,11 +77,11 @@ class _UnitListViewState extends State<_UnitListView> {
 
   String _levelSubtitle(String code) {
     final c = code.toLowerCase();
-    if (c.contains('a1')) return 'Beginner';
-    if (c.contains('a2')) return 'Elementary';
-    if (c.contains('b1')) return 'Intermediate';
-    if (c.contains('b2')) return 'Upper Intermediate';
-    if (c.contains('c')) return 'Advanced';
+    if (c.contains('a1')) return 'Sơ cấp';
+    if (c.contains('a2')) return 'Cơ bản';
+    if (c.contains('b1')) return 'Trung cấp';
+    if (c.contains('b2')) return 'Trung cấp cao';
+    if (c.contains('c')) return 'Nâng cao';
     return '';
   }
 
@@ -90,8 +90,7 @@ class _UnitListViewState extends State<_UnitListView> {
         .asMap()
         .entries
         .map((e) => _IndexedUnit(index: e.key, unit: e.value))
-        .where((u) =>
-            u.unit.name.toLowerCase().contains(_searchQuery))
+        .where((u) => u.unit.name.toLowerCase().contains(_searchQuery))
         .toList();
 
     switch (_sort) {
@@ -104,122 +103,100 @@ class _UnitListViewState extends State<_UnitListView> {
     }
   }
 
+  String _sortLabel(_SortMode mode) => switch (mode) {
+        _SortMode.original => 'Thứ tự gốc',
+        _SortMode.az => 'A–Z',
+        _SortMode.za => 'Z–A',
+      };
+
+  Future<void> _openSortSheet() async {
+    final selected = await showModalBottomSheet<_SortMode>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SortSheet(
+        current: _sort,
+        options: const [
+          (_SortMode.original, 'Thứ tự gốc', Icons.format_list_numbered_outlined),
+          (_SortMode.az, 'A–Z', Icons.sort_by_alpha_outlined),
+          (_SortMode.za, 'Z–A', Icons.sort_by_alpha_outlined),
+        ],
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() => _sort = selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<UnitListViewModel>();
     final levelCode = vm.levelCode;
     final subtitle = _levelSubtitle(levelCode);
     final totalTerms = vm.units.fold(0, (s, u) => s + u.totalTerms);
+    final knownTerms = vm.units.fold(0, (s, u) => s + u.knownTerms);
     final processedUnits = _processUnits(vm.units);
-
-    final overallProgress = vm.units.isEmpty
-        ? 0.0
-        : vm.units.fold(0, (s, u) => s + u.knownTerms) /
-            (vm.units.fold(0, (s, u) => s + u.totalTerms).clamp(1, 999999));
+    final overallPct = totalTerms == 0
+        ? 0
+        : ((knownTerms / totalTerms) * 100).round();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      appBar: const LexiaAppBar(showBack: true),
+      backgroundColor: AppColors.cream,
+      appBar: WordunoAppBar(
+        title: levelCode.toUpperCase(),
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              subtitle.isNotEmpty
+                  ? '${levelCode.toUpperCase()} · $subtitle'
+                  : levelCode.toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              '${vm.units.length} unit · $overallPct% đã thuộc · $totalTerms từ',
+              style: const TextStyle(
+                color: AppColors.inkSoft,
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
+      ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    subtitle.isNotEmpty
-                        ? '${levelCode.toUpperCase()} — $subtitle'
-                        : levelCode.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${vm.units.length} units · $totalTerms words',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.light,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: overallProgress,
-                      minHeight: 7,
-                      backgroundColor: AppColors.border,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.greenMid,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: _SearchBarWidget(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+              child: _SearchBar(
                 controller: _searchController,
-                hint: 'Search units...',
+                hint: 'Tìm unit...',
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Sort',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      _SortChip(
-                        label: 'Original order',
-                        selected: _sort == _SortMode.original,
-                        onTap: () =>
-                            setState(() => _sort = _SortMode.original),
-                      ),
-                      const SizedBox(width: 8),
-                      _SortChip(
-                        label: 'A–Z',
-                        selected: _sort == _SortMode.az,
-                        onTap: () =>
-                            setState(() => _sort = _SortMode.az),
-                      ),
-                      const SizedBox(width: 8),
-                      _SortChip(
-                        label: 'Z–A',
-                        selected: _sort == _SortMode.za,
-                        onTap: () =>
-                            setState(() => _sort = _SortMode.za),
-                      ),
-                    ],
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _SortChipBtn(
+                  label: 'Sắp xếp',
+                  activeLabel:
+                      _sort == _SortMode.original ? null : _sortLabel(_sort),
+                  highlighted: _sort != _SortMode.original,
+                  onTap: _openSortSheet,
+                ),
               ),
             ),
           ),
-
           if (vm.isLoading)
             const SliverFillRemaining(
-              child: AppLoading(message: 'Loading units...'),
+              child: AppLoading(message: 'Đang tải unit...'),
             )
           else if (vm.errorMessage != null)
             SliverFillRemaining(
@@ -232,27 +209,25 @@ class _UnitListViewState extends State<_UnitListView> {
             const SliverFillRemaining(
               child: Center(
                 child: Text(
-                  'No units found.',
-                  style: TextStyle(color: AppColors.light),
+                  'Không tìm thấy unit.',
+                  style: TextStyle(color: AppColors.inkSoft),
                 ),
               ),
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 32),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {
                     final item = processedUnits[i];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: 10),
                       child: _UnitCard(
                         unit: item.unit,
-                        displayIndex: item.index,
+                        colorIndex: item.index,
                         onTap: () {
-                          context
-                              .read<AppNavigationNotifier>()
-                              .openHomeRoute(
+                          context.read<AppNavigationNotifier>().openStudyRoute(
                                 HomeRoutePaths.termList,
                                 params: {
                                   'level': vm.levelCode,
@@ -280,9 +255,8 @@ class _IndexedUnit {
   final Unit unit;
 }
 
-class _SearchBarWidget extends StatelessWidget {
-  const _SearchBarWidget(
-      {required this.controller, required this.hint});
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.controller, required this.hint});
 
   final TextEditingController controller;
   final String hint;
@@ -294,195 +268,315 @@ class _SearchBarWidget extends StatelessWidget {
       style: const TextStyle(fontSize: 14, color: AppColors.ink),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.light, fontSize: 14),
+        hintStyle: const TextStyle(color: AppColors.inkSoft, fontSize: 14),
         prefixIcon:
-            const Icon(Icons.search, color: AppColors.light, size: 20),
+            const Icon(Icons.search, color: AppColors.inkSoft, size: 20),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: AppColors.card,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          borderSide:
-              const BorderSide(color: AppColors.greenMid, width: 1.5),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+          borderSide: const BorderSide(color: AppColors.lavender, width: 1.5),
         ),
       ),
     );
   }
 }
 
-class _SortChip extends StatelessWidget {
-  const _SortChip({
+class _SortChipBtn extends StatelessWidget {
+  const _SortChipBtn({
     required this.label,
-    required this.selected,
     required this.onTap,
+    this.activeLabel,
+    this.highlighted = false,
   });
 
   final String label;
-  final bool selected;
+  final String? activeLabel;
+  final bool highlighted;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.greenDark : AppColors.white,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusPill),
-          border: Border.all(
-            color: selected ? AppColors.greenDark : AppColors.border,
+    final isActive = highlighted || activeLabel != null;
+    return Material(
+      color: isActive ? AppColors.lavender : AppColors.card,
+      borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppDecorations.radiusChip),
+            border: Border.all(
+              color: isActive ? AppColors.lavender : AppColors.line,
+              width: 1.5,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: selected ? AppColors.white : AppColors.mid,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sort_rounded,
+                size: 16,
+                color: isActive ? AppColors.lavenderInk : AppColors.inkSoft,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isActive ? AppColors.lavenderInk : AppColors.inkSoft,
+                ),
+              ),
+              if (activeLabel != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '· $activeLabel',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isActive ? AppColors.lavenderInk : AppColors.inkSoft,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _SortSheet extends StatelessWidget {
+  const _SortSheet({
+    required this.current,
+    required this.options,
+  });
+
+  final _SortMode current;
+  final List<(_SortMode, String, IconData)> options;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Sắp xếp',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 14),
+              for (final opt in options) ...[
+                Material(
+                  color: opt.$1 == current
+                      ? AppColors.lavender
+                      : AppColors.card,
+                  borderRadius: BorderRadius.circular(AppDecorations.radiusBtn),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, opt.$1),
+                    borderRadius:
+                        BorderRadius.circular(AppDecorations.radiusBtn),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(AppDecorations.radiusBtn),
+                        border: Border.all(
+                          color: opt.$1 == current
+                              ? AppColors.lavender
+                              : AppColors.line,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            opt.$3,
+                            size: 20,
+                            color: opt.$1 == current
+                                ? AppColors.lavenderInk
+                                : AppColors.inkSoft,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              opt.$2,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: opt.$1 == current
+                                    ? AppColors.lavenderInk
+                                    : AppColors.ink,
+                              ),
+                            ),
+                          ),
+                          if (opt.$1 == current)
+                            const Icon(
+                              Icons.check_rounded,
+                              size: 20,
+                              color: AppColors.lavenderInk,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Display-only title: strip leading "Unit N" / "Unit N ·" if present in the name.
+String _displayUnitName(String name) {
+  final cleaned = name
+      .replaceFirst(
+        RegExp(r'^unit\s*\d+\s*[·•:\-–—]?\s*', caseSensitive: false),
+        '',
+      )
+      .trim();
+  return cleaned.isEmpty ? name : cleaned;
 }
 
 class _UnitCard extends StatelessWidget {
   const _UnitCard({
     required this.unit,
-    required this.displayIndex,
+    required this.colorIndex,
     required this.onTap,
   });
 
   final Unit unit;
-  final int displayIndex;
+  final int colorIndex;
   final VoidCallback onTap;
-
-  static const _icons = [
-    Icons.flight_takeoff_outlined,
-    Icons.work_outline_rounded,
-    Icons.favorite_border_rounded,
-    Icons.computer_outlined,
-    Icons.eco_outlined,
-    Icons.palette_outlined,
-    Icons.science_outlined,
-    Icons.home_outlined,
-    Icons.music_note_outlined,
-    Icons.directions_run_rounded,
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final pal = AppColors.unitPalette(displayIndex);
-    final icon = _icons[displayIndex % _icons.length];
+    final pal = AppColors.unitPalette(colorIndex);
     final pct = (unit.progress * 100).round();
+    final title = _displayUnitName(unit.name);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-          boxShadow: AppDecorations.shadowSm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: pal.bg,
-                    borderRadius:
-                        BorderRadius.circular(AppDecorations.radiusSm),
-                  ),
-                  child: Icon(icon, color: pal.accent, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Unit ${displayIndex + 1}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      Text(
-                        unit.name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mid,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+    return Material(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppDecorations.radiusCard),
+            boxShadow: AppDecorations.shadowMd,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: pal.bg,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(14),
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(20),
                   ),
                 ),
-                Text(
-                  '$pct%',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: pal.accent,
-                  ),
+                child: Icon(
+                  Icons.layers_outlined,
+                  color: pal.accent,
+                  size: 22,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: unit.progress,
-                minHeight: 5,
-                backgroundColor: AppColors.surface,
-                valueColor: AlwaysStoppedAnimation<Color>(pal.accent),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.check, size: 13, color: AppColors.light),
-                const SizedBox(width: 3),
-                Text(
-                  '${unit.knownTerms} learned',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.light,
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${unit.totalTerms} từ · $pct%',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.inkSoft,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppDecorations.radiusPill),
+                      child: LinearProgressIndicator(
+                        value: unit.progress,
+                        minHeight: 7,
+                        backgroundColor: AppColors.line,
+                        valueColor: AlwaysStoppedAnimation<Color>(pal.accent),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                const Icon(Icons.crop_square_outlined,
-                    size: 13, color: AppColors.light),
-                const SizedBox(width: 3),
-                Text(
-                  '${unit.totalTerms} total',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.light,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.inkSoft,
+              ),
+            ],
+          ),
         ),
       ),
     );

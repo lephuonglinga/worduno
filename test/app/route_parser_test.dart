@@ -17,20 +17,20 @@ void main() {
       expect(path.tab, AppTab.dashboard);
     });
 
-    test('parseRouteInformation maps /exam-history to exam history tab', () async {
+    test('parseRouteInformation maps /study to study tab', () async {
       final path = await parser.parseRouteInformation(
-        RouteInformation(uri: Uri.parse('/exam-history')),
+        RouteInformation(uri: Uri.parse('/study')),
       );
 
-      expect(path.tab, AppTab.examHistory);
+      expect(path.tab, AppTab.study);
     });
 
-    test('parseRouteInformation maps /coach-history to coach history tab', () async {
+    test('parseRouteInformation maps /profile to profile tab', () async {
       final path = await parser.parseRouteInformation(
-        RouteInformation(uri: Uri.parse('/coach-history')),
+        RouteInformation(uri: Uri.parse('/profile')),
       );
 
-      expect(path.tab, AppTab.coachHistory);
+      expect(path.tab, AppTab.profile);
     });
 
     test('parseRouteInformation falls back to home for unknown paths', () async {
@@ -44,9 +44,9 @@ void main() {
     test('restoreRouteInformation round-trips deep links', () {
       for (final entry in [
         (AppTab.home, '/'),
+        (AppTab.study, '/study'),
         (AppTab.dashboard, '/dashboard'),
-        (AppTab.examHistory, '/exam-history'),
-        (AppTab.coachHistory, '/coach-history'),
+        (AppTab.profile, '/profile'),
       ]) {
         final config = AppRoutePath.initial().copyWith(tab: entry.$1);
         final info = parser.restoreRouteInformation(config);

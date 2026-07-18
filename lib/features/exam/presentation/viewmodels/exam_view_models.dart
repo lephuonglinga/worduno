@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../../../core/network/dio_error_message.dart';
+import '../../../../core/utils/activity_prefs.dart';
 import '../../application/services/i_exam_service.dart';
 import '../../domain/entities/exam_config.dart';
 import '../../domain/entities/exam_history.dart';
@@ -215,6 +216,9 @@ class ExamSessionViewModel extends ChangeNotifier {
           ),
         ),
       );
+      try {
+        await ActivityPrefs.recordActivity();
+      } catch (_) {}
     } catch (error) {
       errorMessage = messageFromError(error);
       rethrow;

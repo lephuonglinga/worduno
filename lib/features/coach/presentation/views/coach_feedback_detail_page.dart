@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../app/navigation/app_navigation_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/feature_signatures.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_navigation_widgets.dart';
@@ -127,11 +128,14 @@ class _CoachFeedbackDetailPageState extends State<CoachFeedbackDetailPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: AppColors.card,
                     borderRadius:
-                        BorderRadius.circular(AppDecorations.radiusSm),
+                        BorderRadius.circular(AppDecorations.radiusCard),
                     border: const Border(
-                      left: BorderSide(color: AppColors.greenMid, width: 4),
+                      left: BorderSide(
+                        color: FeatureSignatures.coachInk,
+                        width: 4,
+                      ),
                     ),
                   ),
                   child: Text(
@@ -148,33 +152,33 @@ class _CoachFeedbackDetailPageState extends State<CoachFeedbackDetailPage> {
                 _DetailCard(
                   title: 'Grammar',
                   content: result.grammar,
-                  color: AppColors.blue,
-                  iconColor: AppColors.greenDark,
+                  color: const Color(0xFFDCEEFF),
+                  iconColor: const Color(0xFF2B6CB0),
                   icon: Icons.menu_book_outlined,
                 ),
                 const SizedBox(height: 10),
                 _DetailCard(
                   title: 'Vocabulary',
                   content: result.vocabulary,
-                  color: AppColors.green,
-                  iconColor: AppColors.greenDark,
+                  color: AppColors.mint,
+                  iconColor: AppColors.mintInk,
                   icon: Icons.edit_outlined,
                 ),
                 const SizedBox(height: 10),
                 _DetailCard(
                   title: 'Naturalness',
                   content: result.naturalness,
-                  color: AppColors.beigeLight,
-                  iconColor: AppColors.coralMid,
-                  icon: Icons.chat_bubble_outline,
+                  color: FeatureSignatures.coachBg,
+                  iconColor: FeatureSignatures.coachInk,
+                  icon: FeatureSignatures.coachIcon,
                 ),
                 if (result.suggestions.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   _DetailCard(
                     title: 'Suggestion',
                     content: result.suggestions.map((s) => '• $s').join('\n'),
-                    color: AppColors.beige,
-                    iconColor: AppColors.coralDark,
+                    color: FeatureSignatures.coachBg.withValues(alpha: 0.55),
+                    iconColor: FeatureSignatures.coachInk,
                     icon: Icons.lightbulb_outline,
                   ),
                 ],

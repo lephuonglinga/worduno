@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../app/di/injection.dart';
 import '../../../../core/network/dio_error_message.dart';
+import '../../../../core/utils/activity_prefs.dart';
 import '../../application/services/i_coach_service.dart';
 import '../../domain/entities/coach_entities.dart';
 
@@ -214,6 +215,9 @@ class CoachSessionViewModel extends ChangeNotifier {
         userSentence: sentence,
         result: result,
       );
+      try {
+        await ActivityPrefs.recordActivity();
+      } catch (_) {}
       _skippedIndices.remove(currentIndex);
       feedbackCount++;
       phase = CoachSessionPhase.feedback;
