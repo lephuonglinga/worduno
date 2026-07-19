@@ -42,4 +42,10 @@ app.*.map.json
 # Local SDK paths
 android/local.properties
 
+# Docs: keep markdown + export script; ignore generated / unrelated artifacts
 /docs/lexia-preview/
+/docs/**/*.docx
+/docs/export/diagrams/
+/docs/export/_mermaid/
+/docs/export/*_prepared.md
+/docs/export/puppeteer.json

@@ -18,14 +18,14 @@ Level:
 
 Chức năng chính:
 
-* Xem danh sách level, unit, term  
-* Học bằng flashcard  
-* Đánh dấu sao  
-* Theo dõi tiến độ học  
+* Onboarding lần đầu mở app  
+* Trang chủ (gateway): streak, daily learn, tiếp tục unit gần nhất  
+* Duyệt Level → Unit → Term (tab Học tập); cache từ vựng local  
+* Học bằng flashcard (Learn session)  
+* Đánh dấu sao / Know / Learning  
 * Tạo bài kiểm tra  
-* AI Coach  
-* Xem lịch sử bài kiểm tra  
-* Xem lịch sử AI feedback  
+* AI Coach (explain + evaluate)  
+* Hồ sơ: lịch sử Exam / Coach  
 * Dashboard thống kê
 
 ## **1.3 Business Rules**
@@ -64,14 +64,19 @@ Progress được tính dựa trên số từ có trạng thái Know.
 
 Bottom Navigation gồm:
 
-* Home  
-* Dashboard  
-* Exam History  
-* Coach History
+* Trang chủ (Home gateway)  
+* Học tập (Study — Level → Unit → Term)  
+* Thống kê (Dashboard)  
+* Hồ sơ (Profile — Exam History / Coach History)
 
 Các màn hình:
 
-Home  
+Onboarding (lần đầu)
+
+Trang chủ  
+→ Continue last unit / mở Study
+
+Học tập  
 → Level List  
 → Unit List  
 → Term List  
@@ -79,19 +84,30 @@ Home
 → Exam  
 → Coach
 
-Dashboard
+Thống kê  
+→ Dashboard
 
-Exam History  
-→ Exam Detail
+Hồ sơ  
+→ Exam History → Exam Detail  
+→ Coach History → Word History → Feedback Detail
 
-Coach History  
-→ Coach Detail
+Deep link gốc: `/`, `/study`, `/dashboard`, `/profile`.
 
 ---
 
 # **3\. Home**
 
-## **3.1 Level List**
+## **3.0 Home Gateway (tab Trang chủ)**
+
+Hiển thị:
+
+* Streak (số ngày hoạt động liên tiếp)  
+* Daily learn count  
+* Banner tính năng (có thể dismiss)  
+* Progress theo level  
+* Continue unit gần nhất
+
+## **3.1 Level List (tab Học tập)**
 
 Hiển thị:
 
@@ -107,7 +123,8 @@ Mỗi level hiển thị:
 
 Có nút:
 
-Create Exam
+Create Exam  
+Reload vocabulary (làm mới cache local từ API)
 
 ## **3.2 Create Exam**
 
@@ -402,9 +419,10 @@ Chọn số lượng:
 
 * 5 words  
 * 10 words  
-* 20 words
 
-Random từ trong Unit.
+(Maximum: 10 — `AppConstants.coachWordCounts`)
+
+Random từ trong phạm vi Level/Unit đã chọn (có lọc Star).
 
 Flow:
 
@@ -472,7 +490,7 @@ Recent exams
 
 Recent AI Coach feedback
 
-Không có streak.
+Streak / daily learn được theo dõi trên trang Home (SharedPreferences), không phải heatmap trên Dashboard.
 
 Không có heatmap.
 
@@ -516,12 +534,15 @@ Chỉ đọc term.
 
 # **13\. Local Data**
 
+Database file: `worduno.db` (schema version 6).
+
 UserWordState
 
 * unitId  
 * termId  
 * isStarred  
-* status
+* status  
+* explanation (optional, Coach explain cache)
 
 Status:
 
@@ -542,18 +563,36 @@ QuestionHistory
 * type  
 * question  
 * userAnswer  
-* correctAnswer
+* correctAnswer  
+* isCorrect
 
-CoachHistory
+CoachFeedback
 
 * id  
 * date  
-* word  
+* unitId  
+* termId  
+* levelCode  
+* unitName  
+* definition  
 * userSentence  
-* grammarFeedback  
-* vocabularyFeedback  
-* naturalnessFeedback  
-* suggestionFeedback
+* responseJson (grammar, vocabulary, naturalness, suggestion)
+
+Vocabulary cache (SQLite)
+
+* vocabulary_levels  
+* vocabulary_units  
+* vocabulary_terms  
+* vocabulary_cached_units  
+
+SharedPreferences (Activity / onboarding)
+
+* has_seen_onboarding  
+* streak_count, last_active_date  
+* daily_learn_count / date  
+* last_unit_*  
+* home_banner_dismissed  
+* flashcard_default_face  
 
 ---
 
@@ -561,17 +600,17 @@ CoachHistory
 
 Flutter mobile application.
 
-Offline local progress.
+Offline local progress + vocabulary cache-first (xem lại khi có mạng / Reload).
 
 Responsive UI.
 
-Support Android.
+Support Android (và desktop/web qua sqflite FFI).
 
-Simple architecture.
+Simple architecture (MVVM theo feature).
 
 No authentication.
 
-No synchronization.
+No cloud synchronization of progress.
 
-No data validation.
+No data validation on API payloads (BR-01…03).
 
